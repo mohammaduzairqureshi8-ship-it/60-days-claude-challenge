@@ -3,8 +3,7 @@
 Create an image explaining Prompt Engineering.
 
 output:
-
-![DAY 2](./day2\prompt_engineering_explainer.png)
+![Prompt Engineering Explainer](./prompt_engineering_explainer.png)
 
 #prompt 2: [engineered]
 
@@ -69,4 +68,4 @@ Section 3: LinkedIn Image Concept
 
 Here's the fully designed visual — and below it, the detailed generation prompt for tools like Midjourney, Canva AI, or Adobe Firefly.
 
-![day 2](./day2\prompt_engineering_linkedin_abtalks.png)
+![LinkedIn Concept](./prompt_engineering_linkedin_abtalks.png)
