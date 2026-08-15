@@ -25,7 +25,7 @@ A dead simple formula to remember:
 
 That's it. No technical knowledge needed. The more specific your role, the sharper the answer — "act as a pediatric nurse explaining this to a worried parent" will get you something very different from just "act as a doctor."
 
-![a role](./day3\no_role.png)
+![a role](./no_role.png)
 
 #prompt 2: founder persona:
 act as a founder persona how you can explain role based prompting to the person who dont know anything about ai and prompt engineering
@@ -52,7 +52,7 @@ The expertise has to be specific — "marketing expert" is useless, "growth advi
 
 That's the whole game. Specificity is leverage.
 
-![b role](./day3\founder.png)
+![b role](./founder.png)
 
 #prompt 3: developer persona:
 
@@ -74,4 +74,4 @@ The role should be a real job title or persona, not a vague label — "senior ba
 
 The formula you can hand to anyone on your team: "Act as [specific role] who [context/constraints]. [Behavioral instruction]." That's it. Everything else is tuning.
 
-![c role](./day3\dev.png)
+![c role](./dev.png)
