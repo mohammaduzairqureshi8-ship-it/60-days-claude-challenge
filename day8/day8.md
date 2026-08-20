@@ -52,4 +52,6 @@ IQAir
 
 ✅ Recommendations — Personalised daily actions, indoor air upgrades, outdoor guidance, hair care, skin care, and water quality tips for Lucknow specifically.
 
-<iframe src="./page.html" width="100%" height="400px" frameborder="0"></iframe>
+### Day 8 Files:
+
+- [📄 HTML File Open Karne Ke Liye Yahan Click Karein](./page.html)
