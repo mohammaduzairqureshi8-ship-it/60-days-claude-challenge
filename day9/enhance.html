@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriScope v3 — Precision Nutrition Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+:root {
+  --bg-base:#0a0d12; --bg-card:#111620; --bg-elevated:#161c2a; --bg-input:#1c2333;
+  --border:#1f2c42; --border-light:#253550;
+  --accent:#4ade80; --accent-dim:#16a34a; --accent-glow:rgba(74,222,128,.12);
+  --accent2:#60a5fa; --accent2-glow:rgba(96,165,250,.10);
+  --purple:#a78bfa; --purple-glow:rgba(167,139,250,.10);
+  --warn:#f59e0b; --warn-glow:rgba(245,158,11,.12);
+  --danger:#f87171; --danger-glow:rgba(248,113,113,.10);
+  --text-primary:#e8edf5; --text-secondary:#7a8caa; --text-muted:#4a5e7a;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',monospace;
+  --radius:14px; --radius-sm:8px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font-body);min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,222,128,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(10,13,18,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.3px;text-decoration:none;color:inherit}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.logo span{color:var(--accent)}
+.badge{font-size:11px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(74,222,128,.2);padding:2px 8px;border-radius:20px;font-weight:500}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--bg-input);border-radius:var(--radius-sm);padding:4px}
+.tab{padding:6px 13px;border-radius:6px;border:none;background:none;color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* ── LAYOUT ── */
+.app{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:32px 20px 90px}
+.section{display:none}
+.section.visible{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.card-icon.green{background:var(--accent-glow)}
+.card-icon.blue{background:var(--accent2-glow)}
+.card-icon.amber{background:var(--warn-glow)}
+.card-icon.red{background:var(--danger-glow)}
+.card-icon.purple{background:var(--purple-glow)}
+.card-title{font-weight:600;font-size:15px}
+.card-sub{color:var(--text-muted);font-size:12px;margin-top:1px}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:16px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.form-group input,.form-group select{width:100%;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:14px;transition:border .2s,box-shadow .2s;appearance:none}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent-dim);box-shadow:0 0 0 3px rgba(74,222,128,.08)}
+select option{background:var(--bg-elevated)}
+.form-group textarea{width:100%;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;resize:vertical;min-height:70px}
+.form-group textarea:focus{outline:none;border-color:var(--accent-dim);box-shadow:0 0 0 3px rgba(74,222,128,.08)}
+
+/* ── STAT ROW ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:20px}
+.stat-box{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
+.stat-box .val{font-size:22px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px}
+.stat-box .lbl{font-size:11px;color:var(--text-muted)}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 18px;border-radius:var(--radius-sm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#0a0d12}
+.btn-primary:hover{background:#6ee89a;transform:translateY(-1px)}
+.btn-secondary{background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg-input);color:var(--text-primary)}
+.btn-danger{background:rgba(248,113,113,.10);color:var(--danger);border:1px solid rgba(248,113,113,.2);padding:5px 10px;font-size:12px}
+.btn-danger:hover{background:rgba(248,113,113,.2)}
+.btn-purple{background:var(--purple-glow);color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+.btn-purple:hover{background:rgba(167,139,250,.18)}
+.btn-full{width:100%;justify-content:center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg-elevated);color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid rgba(31,44,66,.45);color:var(--text-primary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.01)}
+
+/* ── DASH GRIDS ── */
+.dash-grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+
+/* ── ENERGY RING ── */
+.energy-ring-wrap{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.ring-container{position:relative;width:140px;height:140px;flex-shrink:0}
+.ring-container canvas{width:140px!important;height:140px!important}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.ring-center .pct{font-size:26px;font-weight:700;line-height:1;color:var(--accent)}
+.ring-center .kcal{font-size:10px;color:var(--text-muted);margin-top:3px}
+.macro-pills{display:flex;flex-direction:column;gap:10px;flex:1;min-width:190px}
+.macro-pill-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:13px}
+.macro-pill-top .name{font-weight:500}
+.macro-pill-top .nums{color:var(--text-muted);font-size:11px;font-family:var(--font-mono)}
+.progress-bar{height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ── NUTRIENT TABLE pct bar ── */
+.pct-bar{display:flex;align-items:center;gap:8px}
+.pct-bar .bar{flex:1;height:4px;background:var(--bg-elevated);border-radius:2px;overflow:hidden;min-width:50px}
+.pct-bar .fill{height:100%;border-radius:2px}
+.pct-label{font-size:11px;font-family:var(--font-mono);width:38px;text-align:right;flex-shrink:0}
+
+/* ── INSIGHT ITEMS ── */
+.insight-list{display:flex;flex-direction:column;gap:10px}
+.insight-item{display:flex;align-items:flex-start;gap:12px;background:var(--bg-elevated);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border)}
+.insight-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.insight-item .name{font-size:13px;font-weight:500}
+.insight-item .detail{font-size:12px;color:var(--text-muted);margin-top:1px}
+
+/* ── REC CARD ── */
+.rec-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.rec-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.rec-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.rec-body{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.chip-green{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(74,222,128,.2)}
+.chip-amber{background:var(--warn-glow);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+.chip-red{background:var(--danger-glow);color:var(--danger);border:1px solid rgba(248,113,113,.2)}
+.chip-blue{background:var(--accent2-glow);color:var(--accent2);border:1px solid rgba(96,165,250,.2)}
+.chip-purple{background:var(--purple-glow);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+
+/* ── MISC ── */
+.section-title{font-size:22px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px}
+.section-desc{color:var(--text-secondary);font-size:14px;margin-bottom:24px}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.mt-16{margin-top:16px}.mt-24{margin-top:24px}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.flex-wrap{flex-wrap:wrap}
+.gap-8{gap:8px}.gap-10{gap:10px}.gap-16{gap:16px}
+.empty-state{text-align:center;padding:36px;color:var(--text-muted);font-size:14px}
+.empty-state .ico{font-size:30px;margin-bottom:10px}
+.chart-container{position:relative;height:220px}
+.chart-container-tall{position:relative;height:280px}
+
+/* ── QTY INPUT ── */
+.qty-input{width:68px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-family:var(--font-mono);font-size:13px;padding:4px 8px;text-align:center}
+.qty-input:focus{outline:none;border-color:var(--accent-dim)}
+
+/* ── FOOD ADD ROW ── */
+.food-add-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end}
+@media(max-width:600px){.food-add-row{grid-template-columns:1fr 1fr}.food-add-row .btn-add{grid-column:1/-1}}
+
+/* ── RISK METER ── */
+.risk-meter{display:flex;flex-direction:column;gap:12px}
+.risk-row{display:flex;align-items:center;gap:12px;font-size:13px}
+.risk-row .risk-label{min-width:130px;font-weight:500}
+.risk-bar-wrap{flex:1;height:8px;background:var(--bg-elevated);border-radius:4px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.risk-score{min-width:38px;text-align:right;font-family:var(--font-mono);font-size:12px}
+
+/* ── MEAL PLANNER ── */
+.day-tabs{display:flex;gap:6px;margin-bottom:16px}
+.day-tab{padding:7px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.day-tab.active{background:var(--accent);color:#0a0d12;border-color:var(--accent)}
+.meal-slot{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.meal-slot-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.meal-slot-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.meal-item{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(31,44,66,.4)}
+.meal-item:last-child{border-bottom:none}
+.meal-item .mi-name{color:var(--text-primary);font-weight:500}
+.meal-item .mi-cal{color:var(--accent);font-family:var(--font-mono)}
+
+/* ── DISCLAIMER ── */
+.disclaimer{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:var(--radius-sm);padding:16px;display:flex;gap:12px;align-items:flex-start;font-size:12px;color:var(--text-secondary);line-height:1.6}
+.disclaimer-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+
+/* ── CSV UPLOAD ── */
+.upload-zone{border:2px dashed var(--border-light);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent-dim);background:rgba(74,222,128,.04)}
+.upload-zone .uz-icon{font-size:28px;margin-bottom:10px}
+.upload-zone .uz-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.upload-zone .uz-sub{font-size:12px;color:var(--text-muted)}
+
+/* ── SOURCES ── */
+.source-item{display:flex;gap:10px;align-items:flex-start;padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.source-num{width:22px;height:22px;background:var(--accent-glow);color:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.source-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.source-body{font-size:12px;color:var(--text-secondary)}
+
+/* ── MOBILE NAV ── */
+.mobile-nav{display:none}
+@media(max-width:480px){
+  .topbar{padding:0 16px}
+  .app{padding:20px 12px 90px}
+  .card{padding:16px}
+  .tabs{display:none}
+  .mobile-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,13,18,.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:200}
+}
+.mobile-nav button{flex:1;padding:9px 4px;background:none;border:none;color:var(--text-muted);font-family:inherit;font-size:9.5px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s}
+.mobile-nav button.active{color:var(--accent)}
+.mobile-nav button .mn-icon{font-size:17px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── RADAR CHART ── */
+.chart-container-radar{position:relative;height:260px}
+
+/* ── AI ANALYSIS ── */
+.ai-chat-wrap{display:flex;flex-direction:column;gap:12px;max-height:520px;overflow-y:auto;padding-right:4px}
+.ai-message{display:flex;gap:12px;align-items:flex-start}
+.ai-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ai-avatar.user{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(74,222,128,.25)}
+.ai-avatar.claude{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff}
+.ai-bubble{background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.65;flex:1;color:var(--text-primary)}
+.ai-bubble.user{background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.ai-bubble.streaming::after{content:'▋';animation:blink .8s steps(1) infinite;color:var(--accent)}
+@keyframes blink{50%{opacity:0}}
+.ai-input-row{display:flex;gap:8px;margin-top:8px}
+.ai-input{flex:1;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;transition:border .2s}
+.ai-input:focus{border-color:var(--accent-dim);box-shadow:0 0 0 3px rgba(74,222,128,.08)}
+.ai-prompt-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ai-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border-light);background:var(--bg-elevated);color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all .18s}
+.ai-pill:hover{border-color:var(--accent-dim);color:var(--accent);background:var(--accent-glow)}
+.ai-empty{text-align:center;padding:36px 20px;color:var(--text-muted)}
+.ai-empty .ai-empty-icon{font-size:36px;margin-bottom:10px}
+
+/* ── SAVE/LOAD BANNER ── */
+.persist-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.18);border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:16px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap}
+.persist-bar strong{color:var(--accent)}
+
+/* ── WATER TRACKER ── */
+.water-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.water-cups{display:flex;gap:6px;flex-wrap:wrap}
+.cup{font-size:22px;cursor:pointer;opacity:.3;transition:opacity .15s,transform .15s;user-select:none}
+.cup.filled{opacity:1}
+.cup:hover{transform:scale(1.15)}
+
+/* ── UPGRADE BADGE ── */
+.badge-ai{font-size:11px;background:linear-gradient(90deg,rgba(99,102,241,.18),rgba(167,139,250,.18));color:#a78bfa;border:1px solid rgba(167,139,250,.25);padding:2px 8px;border-radius:20px;font-weight:500}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🥗</div>
+    Nutri<span>Scope</span>
+    <span class="badge">v3</span>
+    <span class="badge-ai">✦ AI</span>
+  </div>
+  <div class="tabs" id="desktopTabs">
+    <button class="tab active" onclick="showTab('profile')">Profile</button>
+    <button class="tab" onclick="showTab('log')">Food Log</button>
+    <button class="tab" onclick="showTab('planner')">Meal Plan</button>
+    <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="showTab('risk')">Risk</button>
+    <button class="tab" onclick="showTab('insights')">Insights</button>
+    <button class="tab" onclick="showTab('sources')">Sources</button>
+    <button class="tab" onclick="showTab('ai')">✦ AI Coach</button>
+  </div>
+  <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+    <span id="topbarCals" style="font-family:var(--font-mono);color:var(--accent)">0</span> kcal
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<div class="app">
+
+<!-- ════════════════════ PROFILE ════════════════════ -->
+<div class="section visible" id="section-profile">
+  <div class="section-title">Your Profile</div>
+  <div class="section-desc">Complete your details to unlock personalised targets across all 14 tracked nutrients.</div>
+
+  <div class="persist-bar" id="persistBar">
+    <span>💾 <strong>Auto-save is on</strong> — your profile &amp; log are saved locally in this browser.</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="exportData()">⬇ Export JSON</button>
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="document.getElementById('importInput').click()">⬆ Import JSON</button>
+      <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(this.files[0])">
+    </div>
+  </div>
+
+  <div class="disclaimer mt-16">
+    <div class="disclaimer-icon">⚕️</div>
+    <div><strong>Educational tool only.</strong> NutriScope provides general nutritional guidance based on population-level reference values (ICMR-NIN, WHO, FSSAI). It is not a substitute for advice from a registered dietitian, nutritionist, or doctor. Individual needs vary. Consult a qualified health professional before making significant dietary changes, especially if you have a medical condition.</div>
+  </div>
+
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon green">👤</div>
+      <div><div class="card-title">Personal Information</div><div class="card-sub">Mifflin-St Jeor formula · ICMR-NIN micronutrient RDAs</div></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Age</label><input type="number" id="age" value="22" min="1" max="120"></div>
+      <div class="form-group"><label>Gender</label>
+        <select id="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other / Prefer not to say</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Height (cm)</label><input type="number" id="height" value="170" min="50" max="250"></div>
+      <div class="form-group"><label>Weight (kg)</label><input type="number" id="weight" value="65" min="20" max="300"></div>
+      <div class="form-group"><label>Activity Level</label>
+        <select id="activity">
+          <option value="1.2">Sedentary (desk job)</option>
+          <option value="1.375" selected>Light (1–3 days/wk)</option>
+          <option value="1.55">Moderate (3–5 days/wk)</option>
+          <option value="1.725">Active (6–7 days/wk)</option>
+          <option value="1.9">Very Active (athlete)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Goal</label>
+        <select id="goal">
+          <option value="maintain">Maintain Weight</option>
+          <option value="lose">Lose Weight (−300 kcal)</option>
+          <option value="gain">Gain Muscle (+300 kcal)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Dietary Preference</label>
+        <select id="diet">
+          <option value="veg">Vegetarian</option>
+          <option value="nonveg" selected>Non-Vegetarian</option>
+          <option value="egg">Eggetarian</option>
+          <option value="vegan">Vegan</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Health Condition</label>
+        <select id="condition">
+          <option value="none">None</option>
+          <option value="diabetes">Diabetes / Pre-diabetes</option>
+          <option value="hypertension">Hypertension</option>
+          <option value="anaemia">Anaemia</option>
+          <option value="osteoporosis">Osteoporosis Risk</option>
+          <option value="pregnancy">Pregnancy</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat-box"><div class="val" id="statBMR">—</div><div class="lbl">BMR (kcal/day)</div></div>
+      <div class="stat-box"><div class="val" id="statTDEE">—</div><div class="lbl">TDEE (kcal/day)</div></div>
+      <div class="stat-box"><div class="val" id="statTarget">—</div><div class="lbl">Calorie Target</div></div>
+      <div class="stat-box"><div class="val" id="statBMI">—</div><div class="lbl">BMI</div></div>
+      <div class="stat-box"><div class="val" id="statProtein">—</div><div class="lbl">Protein Target (g)</div></div>
+      <div class="stat-box"><div class="val" id="statBMIcat">—</div><div class="lbl">BMI Category</div></div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="saveProfile()">💾 Save Profile & Go to Food Log →</button>
+  </div>
+
+  <!-- Water Tracker -->
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon blue">💧</div>
+      <div><div class="card-title">Daily Water Intake</div><div class="card-sub">Target: 8 glasses (2 litres). Click to mark each glass.</div></div>
+    </div>
+    <div class="water-row">
+      <div class="water-cups" id="waterCups"></div>
+      <div style="margin-left:8px;font-size:13px;color:var(--text-secondary)"><span id="waterCount" style="font-size:20px;font-weight:700;color:var(--accent2)">0</span> / 8 glasses</div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--text-muted)" id="waterMsg">Start hydrating! Tap a glass to track.</div>
+  </div>
+</div>
+
+<!-- ════════════════════ FOOD LOG ════════════════════ -->
+<div class="section" id="section-log">
+  <div class="section-title">Food Log</div>
+  <div class="section-desc">Log meals manually or upload a CSV. Quantities are editable in-table.</div>
+
+  <!-- CSV Upload -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon blue">📤</div>
+      <div><div class="card-title">CSV Import</div><div class="card-sub">Upload a file with columns: Food, Quantity, Unit</div></div>
+    </div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvInput').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag-over')">
+      <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">
+      <div class="uz-icon">📂</div>
+      <div class="uz-title">Click or drag a CSV here</div>
+      <div class="uz-sub">Columns: Food, Quantity, Unit · Example: Rice, 150, g</div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+      Sample CSV format: <code style="background:var(--bg-elevated);padding:2px 6px;border-radius:4px;font-size:11px">Rice,150,g</code>
+      <button class="btn btn-secondary" style="margin-left:10px;padding:4px 10px;font-size:12px" onclick="downloadSampleCSV()">⬇ Download Sample</button>
+    </div>
+  </div>
+
+  <!-- Manual Add -->
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon green">➕</div>
+      <div><div class="card-title">Add Food Entry</div></div>
+    </div>
+    <div class="food-add-row">
+      <div class="form-group">
+        <label>Food Item</label>
+        <select id="foodSelect"><option value="">— Select food —</option></select>
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="foodQty" value="100" min="1">
+      </div>
+      <div class="form-group">
+        <label>Unit</label>
+        <select id="foodUnit">
+          <option value="g">grams</option>
+          <option value="ml">ml</option>
+          <option value="piece">piece</option>
+          <option value="cup">cup (240g)</option>
+          <option value="tbsp">tbsp (15g)</option>
+          <option value="katori">katori (150g)</option>
+        </select>
+      </div>
+      <div class="form-group btn-add">
+        <label style="color:transparent">Add</label>
+        <button class="btn btn-primary btn-full" onclick="addFoodEntry()">Add</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Food</th><th>Qty</th><th>Unit</th><th>Cal</th><th>Prot</th><th>Carb</th><th>Fat</th><th>Fiber</th><th></th></tr>
+        </thead>
+        <tbody id="logBody">
+          <tr><td colspan="9"><div class="empty-state"><div class="ico">🍽️</div>No entries yet</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+    <div class="flex items-center justify-between flex-wrap" style="gap:10px">
+      <div style="font-size:13px;color:var(--text-muted)">
+        <span id="logCount">0</span> entries · <span id="logCals" style="color:var(--accent);font-family:var(--font-mono)">0</span> kcal
+      </div>
+      <div class="flex" style="gap:8px">
+        <button class="btn btn-secondary" onclick="clearLog()">🗑️ Clear All</button>
+        <button class="btn btn-primary" onclick="showTab('dashboard')">View Dashboard →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ MEAL PLANNER ════════════════════ -->
+<div class="section" id="section-planner">
+  <div class="section-title">2-Day Meal Planner</div>
+  <div class="section-desc">Build a planned diet for tomorrow and the day after. Click a food to add it to a meal slot.</div>
+
+  <div class="day-tabs">
+    <button class="day-tab active" onclick="switchPlanDay(1,this)">Day 1</button>
+    <button class="day-tab" onclick="switchPlanDay(2,this)">Day 2</button>
+  </div>
+
+  <div class="dash-grid g2">
+    <!-- Planner slots -->
+    <div>
+      <div id="planSlots"></div>
+      <div class="card mt-16">
+        <div class="card-header">
+          <div class="card-icon green">➕</div>
+          <div><div class="card-title">Add to Plan</div></div>
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group">
+            <label>Meal Slot</label>
+            <select id="planSlotSel">
+              <option value="breakfast">🌅 Breakfast</option>
+              <option value="lunch">☀️ Lunch</option>
+              <option value="snack">🍎 Snack</option>
+              <option value="dinner">🌙 Dinner</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Food</label>
+            <select id="planFoodSel"><option value="">— Select —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Quantity (g)</label>
+            <input type="number" id="planQty" value="100" min="1">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary btn-full" onclick="addToPlan()">Add to Plan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan nutrient summary -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon blue">📊</div>
+          <div><div class="card-title">Plan Nutrition Summary</div><div class="card-sub" id="planDayLabel">Day 1</div></div>
+        </div>
+        <div id="planSummary">
+          <div class="empty-state"><div class="ico">📋</div>Add foods to see the plan nutrition</div>
+        </div>
+      </div>
+      <div class="card mt-16">
+        <div class="card-header">
+          <div class="card-icon amber">💡</div>
+          <div><div class="card-title">Plan Tips</div></div>
+        </div>
+        <div id="planTips" style="font-size:13px;color:var(--text-secondary);line-height:1.7">
+          Build your plan and tips will appear based on nutrient gaps.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ DASHBOARD ════════════════════ -->
+<div class="section" id="section-dashboard">
+  <div class="section-title">Dashboard</div>
+  <div class="section-desc">Today's complete nutritional picture.</div>
+
+  <div class="dash-grid g2 mt-16">
+    <!-- Energy ring -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon green">⚡</div>
+        <div><div class="card-title">Energy Balance</div><div class="card-sub">Calories vs. daily target</div></div>
+      </div>
+      <div class="energy-ring-wrap">
+        <div class="ring-container">
+          <canvas id="energyRing"></canvas>
+          <div class="ring-center">
+            <div class="pct" id="energyPct">0%</div>
+            <div class="kcal" id="energyKcalLabel">0 / 0 kcal</div>
+          </div>
+        </div>
+        <div class="macro-pills" id="macroPills"></div>
+      </div>
+    </div>
+
+    <!-- Macro chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon blue">📊</div>
+        <div><div class="card-title">Macronutrient Split</div><div class="card-sub">Calorie contribution per macro</div></div>
+      </div>
+      <div class="chart-container"><canvas id="macroChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Micronutrient Radar + Trend Bar -->
+  <div class="dash-grid g2 mt-16">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon purple">🕸️</div>
+        <div><div class="card-title">Micronutrient Radar</div><div class="card-sub">% of daily target — ideal range 80–120%</div></div>
+      </div>
+      <div class="chart-container-radar"><canvas id="radarChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon amber">📈</div>
+        <div><div class="card-title">Nutrient Completion</div><div class="card-sub">All 14 nutrients vs. targets</div></div>
+      </div>
+      <div class="chart-container-tall"><canvas id="completionChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Deficiency / Excess -->
+  <div class="dash-grid g2 mt-16">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon amber">⚠️</div>
+        <div><div class="card-title">Top Deficiencies</div><div class="card-sub">Nutrients below 80% of target</div></div>
+      </div>
+      <div class="insight-list" id="deficiencyList"><div class="empty-state" style="padding:20px">Log food to see gaps</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red">🔺</div>
+        <div><div class="card-title">Top Excesses</div><div class="card-sub">Nutrients above 120% of target</div></div>
+      </div>
+      <div class="insight-list" id="excessList"><div class="empty-state" style="padding:20px">Log food to see excesses</div></div>
+    </div>
+  </div>
+
+  <!-- Full nutrient table -->
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon blue">🔬</div>
+      <div><div class="card-title">Complete Nutrient Profile</div><div class="card-sub">All 14 tracked nutrients with % completion</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nutrient</th><th>Consumed</th><th>Target</th><th>Progress</th><th>Status</th><th>Source Foods</th></tr></thead>
+        <tbody id="nutrientBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ RISK ANALYSIS ════════════════════ -->
+<div class="section" id="section-risk">
+  <div class="section-title">Risk Analysis</div>
+  <div class="section-desc">Potential nutritional health risks based on your current logged intake patterns.</div>
+
+  <div class="disclaimer">
+    <div class="disclaimer-icon">⚠️</div>
+    <div>Risk scores are <strong>educational estimates only</strong> based on chronic under- or over-consumption of specific nutrients. They are NOT a medical diagnosis. A single day's log is not sufficient to assess long-term risk. Always consult a qualified healthcare provider for medical advice.</div>
+  </div>
+
+  <div class="dash-grid g2 mt-16">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon amber">🎯</div>
+        <div><div class="card-title">Risk Score Overview</div><div class="card-sub">Higher score = greater potential concern</div></div>
+      </div>
+      <div class="risk-meter" id="riskMeter">
+        <div class="empty-state"><div class="ico">📊</div>Log food to generate risk scores</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red">🩺</div>
+        <div><div class="card-title">Condition-Specific Insights</div><div class="card-sub">Based on your profile health condition</div></div>
+      </div>
+      <div id="conditionInsights">
+        <div class="empty-state"><div class="ico">🏥</div>Select a health condition in Profile to see targeted insights</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon blue">📖</div>
+      <div><div class="card-title">Risk Explanations</div><div class="card-sub">What each risk factor means for your health</div></div>
+    </div>
+    <div id="riskExplanations" style="display:flex;flex-direction:column;gap:10px">
+      <div class="empty-state"><div class="ico">📋</div>Log food to see explanations</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ INSIGHTS ════════════════════ -->
+<div class="section" id="section-insights">
+  <div class="section-title">Smart Insights</div>
+  <div class="section-desc">Personalised food additions, swaps, portion guidance, and meal timing tips — filtered by your dietary preference.</div>
+
+  <div style="background:linear-gradient(120deg,rgba(99,102,241,.12),rgba(167,139,250,.12));border:1px solid rgba(167,139,250,.25);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div style="font-size:13px;color:var(--text-secondary)">✦ Want deeper, conversational guidance? <strong style="color:#a78bfa">Ask the AI Coach</strong> for custom meal plans, nutrient breakdowns, and more.</div>
+    <button class="btn btn-purple" onclick="showTab('ai')">Open AI Coach →</button>
+  </div>
+
+  <div class="dash-grid" style="gap:16px" id="recsGrid">
+    <div class="card"><div class="empty-state"><div class="ico">🤖</div>Save your profile and log food to get personalised recommendations</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════ SOURCES ════════════════════ -->
+<div class="section" id="section-sources">
+  <div class="section-title">Nutrition Sources</div>
+  <div class="section-desc">NutriScope's data, calculation methods, and reference standards.</div>
+
+  <div class="disclaimer">
+    <div class="disclaimer-icon">📚</div>
+    <div>All nutrient data is derived from publicly available Indian and international food composition databases. Values are per 100g of edible raw food unless otherwise stated. Nutrient content varies by cooking method, food variety, and growing conditions.</div>
+  </div>
+
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon blue">📊</div>
+      <div><div class="card-title">Data Sources & References</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="source-item"><div class="source-num">1</div><div><div class="source-title">ICMR-NIN Nutritive Value of Indian Foods (2017)</div><div class="source-body">Primary source for macronutrient and micronutrient composition of Indian foods. Covers 528 food items with values per 100g edible portion. Indian Council of Medical Research, Hyderabad.</div></div></div>
+      <div class="source-item"><div class="source-num">2</div><div><div class="source-title">ICMR-NIN Recommended Dietary Allowances (RDA) for Indians (2020)</div><div class="source-body">Age- and gender-specific RDAs used for target calculations. Covers protein, energy, vitamins (A, B-complex, C, D, E, K), minerals (iron, calcium, zinc, iodine, magnesium).</div></div></div>
+      <div class="source-item"><div class="source-num">3</div><div><div class="source-title">FSSAI Dietary Guidelines for Indians (2022)</div><div class="source-body">Food Safety and Standards Authority of India guidelines on balanced diets, food group portions, and health promotion used for recommendation logic.</div></div></div>
+      <div class="source-item"><div class="source-num">4</div><div><div class="source-title">WHO Global Nutrient Reference Values</div><div class="source-body">Used for Vitamin D (15 µg/day), Vitamin B12 (2.4 µg/day), and upper intake levels for sodium and saturated fat where ICMR values are not available.</div></div></div>
+      <div class="source-item"><div class="source-num">5</div><div><div class="source-title">Mifflin-St Jeor Equation (1990)</div><div class="source-body">BMR calculation formula validated across Indian populations. Males: (10×W)+(6.25×H)−(5×A)+5. Females: (10×W)+(6.25×H)−(5×A)−161. TDEE = BMR × activity factor.</div></div></div>
+      <div class="source-item"><div class="source-num">6</div><div><div class="source-title">USDA FoodData Central (supplementary)</div><div class="source-body">Used for foods not covered in ICMR-NIN database and to cross-validate Vitamin D and B12 values for animal-derived foods and fortified products.</div></div></div>
+    </div>
+  </div>
+
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon green">🧮</div>
+      <div><div class="card-title">Calculation Methods</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="rec-card"><div class="rec-icon">⚡</div><div><div class="rec-title">Energy Targets</div><div class="rec-body">TDEE adjusted by goal: Maintain (±0), Lose Weight (−300 kcal), Gain Muscle (+300 kcal). Macro split: 45% carbs, 25% protein, 30% fat of total calories.</div></div></div>
+      <div class="rec-card"><div class="rec-icon">🥩</div><div><div class="rec-title">Protein Target</div><div class="rec-body">1.6g per kg body weight — in line with ICMR-NIN's recommendation for active adults. Increased to 1.8g/kg for muscle gain goal.</div></div></div>
+      <div class="rec-card"><div class="rec-icon">⚖️</div><div><div class="rec-title">Micronutrient Targets</div><div class="rec-body">Gender-specific RDAs from ICMR 2020. Iron: 8mg (male), 18mg (female, non-pregnant). Calcium: 1000mg adults. Pregnancy condition applies elevated targets (iron 27mg, calcium 1200mg, folate 600µg).</div></div></div>
+      <div class="rec-card"><div class="rec-icon">🎯</div><div><div class="rec-title">Risk Scoring</div><div class="rec-body">Composite risk score (0–100) derived from weighted deviation of key risk nutrients from their targets. Chronic conditions adjust nutrient weightings. Not a validated clinical tool.</div></div></div>
+    </div>
+  </div>
+
+  <div class="card mt-16">
+    <div class="card-header">
+      <div class="card-icon amber">🍱</div>
+      <div><div class="card-title">Complete Food Database (60 Foods)</div></div>
+    </div>
+    <div id="foodDbTable" style="margin-top:4px"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ AI COACH ════════════════════ -->
+<div class="section" id="section-ai">
+  <div class="section-title">✦ AI Nutrition Coach</div>
+  <div class="section-desc">Ask Claude anything about your logged nutrition — personalised to your profile, diet, and goals.</div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon purple">🤖</div>
+      <div><div class="card-title">Chat with Claude</div><div class="card-sub">Powered by Claude Sonnet · Knows your full nutrient profile</div></div>
+    </div>
+
+    <div class="ai-prompt-pills" id="aiPills">
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">What's my biggest nutritional gap today?</button>
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">Suggest a high-protein Indian breakfast</button>
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">Am I getting enough iron?</button>
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">What foods should I add for Vitamin D?</button>
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">Analyze my macro balance</button>
+      <button class="ai-pill" onclick="sendAiPrompt(this.textContent)">Give me a meal plan for my calorie target</button>
+    </div>
+
+    <div class="ai-chat-wrap" id="aiChatWrap">
+      <div class="ai-empty">
+        <div class="ai-empty-icon">🥗</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Your AI nutrition coach is ready</div>
+        <div style="font-size:12px">Log some food first, then ask anything — Claude knows your nutrients, targets, and dietary preference.</div>
+      </div>
+    </div>
+
+    <div class="ai-input-row">
+      <input class="ai-input" id="aiInput" type="text" placeholder="Ask about your nutrition, meal ideas, or specific nutrients…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMessage()}">
+      <button class="btn btn-primary" onclick="sendAiMessage()" id="aiSendBtn">Send</button>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">⚕️ AI responses are for educational purposes only and not medical advice. Always consult a qualified health professional.</div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="active" onclick="showTab('profile')"><span class="mn-icon">👤</span>Profile</button>
+  <button onclick="showTab('log')"><span class="mn-icon">🍽️</span>Log</button>
+  <button onclick="showTab('planner')"><span class="mn-icon">📋</span>Plan</button>
+  <button onclick="showTab('dashboard')"><span class="mn-icon">📊</span>Dash</button>
+  <button onclick="showTab('risk')"><span class="mn-icon">🎯</span>Risk</button>
+  <button onclick="showTab('insights')"><span class="mn-icon">💡</span>Tips</button>
+  <button onclick="showTab('ai')"><span class="mn-icon">✦</span>AI</button>
+</nav>
+
+<script>
+/* ════════════════════════════════════════════════════
+   FOOD DATABASE — 60 foods, 14 nutrients per 100g
+   cal, protein, carbs, fat, fiber,
+   iron, calcium, vitC, vitD, vitB12,
+   zinc, magnesium, potassium, folate
+════════════════════════════════════════════════════ */
+const FOODS = {
+  // ── Original 20 ──
+  "Rice":       {cal:130, protein:2.7, carbs:28,   fat:0.3,  fiber:0.4,  iron:0.2,  calcium:10,  vitC:0,    vitD:0,   vitB12:0,   zinc:0.5,  magnesium:25,  potassium:35,  folate:2},
+  "Roti":       {cal:297, protein:9.2, carbs:53,   fat:4.3,  fiber:4.6,  iron:2.7,  calcium:40,  vitC:0,    vitD:0,   vitB12:0,   zinc:1.2,  magnesium:82,  potassium:190, folate:26},
+  "Dal":        {cal:116, protein:9.0, carbs:20,   fat:0.4,  fiber:8.0,  iron:3.3,  calcium:19,  vitC:1.5,  vitD:0,   vitB12:0,   zinc:1.3,  magnesium:47,  potassium:369, folate:181},
+  "Paneer":     {cal:265, protein:18,  carbs:3.6,  fat:20,   fiber:0,    iron:0.5,  calcium:208, vitC:0,    vitD:0.2, vitB12:0.8, zinc:2.2,  magnesium:14,  potassium:98,  folate:7},
+  "Curd":       {cal:61,  protein:3.5, carbs:4.7,  fat:3.3,  fiber:0,    iron:0.1,  calcium:121, vitC:0.5,  vitD:0.1, vitB12:0.4, zinc:0.5,  magnesium:12,  potassium:155, folate:10},
+  "Chana":      {cal:164, protein:8.9, carbs:27,   fat:2.6,  fiber:7.6,  iron:2.9,  calcium:49,  vitC:1.3,  vitD:0,   vitB12:0,   zinc:1.5,  magnesium:48,  potassium:291, folate:172},
+  "Rajma":      {cal:127, protein:8.7, carbs:22.8, fat:0.5,  fiber:6.4,  iron:2.2,  calcium:83,  vitC:2.2,  vitD:0,   vitB12:0,   zinc:1.0,  magnesium:45,  potassium:405, folate:130},
+  "Banana":     {cal:89,  protein:1.1, carbs:23,   fat:0.3,  fiber:2.6,  iron:0.3,  calcium:5,   vitC:8.7,  vitD:0,   vitB12:0,   zinc:0.2,  magnesium:27,  potassium:358, folate:20},
+  "Apple":      {cal:52,  protein:0.3, carbs:14,   fat:0.2,  fiber:2.4,  iron:0.1,  calcium:6,   vitC:4.6,  vitD:0,   vitB12:0,   zinc:0.04, magnesium:5,   potassium:107, folate:3},
+  "Milk":       {cal:61,  protein:3.2, carbs:4.8,  fat:3.3,  fiber:0,    iron:0.1,  calcium:113, vitC:0,    vitD:1.0, vitB12:0.5, zinc:0.4,  magnesium:10,  potassium:143, folate:5},
+  "Oats":       {cal:389, protein:17,  carbs:66,   fat:7.0,  fiber:11,   iron:4.7,  calcium:54,  vitC:0,    vitD:0,   vitB12:0,   zinc:4.0,  magnesium:177, potassium:429, folate:56},
+  "Bread":      {cal:265, protein:9.0, carbs:49,   fat:3.2,  fiber:2.7,  iron:2.9,  calcium:151, vitC:0,    vitD:0,   vitB12:0,   zinc:0.7,  magnesium:24,  potassium:100, folate:30},
+  "Egg":        {cal:155, protein:13,  carbs:1.1,  fat:11,   fiber:0,    iron:1.8,  calcium:50,  vitC:0,    vitD:2.0, vitB12:1.1, zinc:1.3,  magnesium:12,  potassium:126, folate:44},
+  "Chicken":    {cal:165, protein:31,  carbs:0,    fat:3.6,  fiber:0,    iron:1.0,  calcium:11,  vitC:0,    vitD:0.1, vitB12:0.4, zinc:2.5,  magnesium:28,  potassium:256, folate:7},
+  "Fish":       {cal:136, protein:22,  carbs:0,    fat:5.0,  fiber:0,    iron:0.7,  calcium:16,  vitC:0,    vitD:4.5, vitB12:2.0, zinc:0.6,  magnesium:32,  potassium:384, folate:15},
+  "Potato":     {cal:77,  protein:2.0, carbs:17,   fat:0.1,  fiber:2.2,  iron:0.8,  calcium:12,  vitC:19.7, vitD:0,   vitB12:0,   zinc:0.3,  magnesium:23,  potassium:421, folate:15},
+  "Poha":       {cal:333, protein:7.0, carbs:73,   fat:1.2,  fiber:2.3,  iron:2.8,  calcium:14,  vitC:0,    vitD:0,   vitB12:0,   zinc:0.8,  magnesium:20,  potassium:64,  folate:8},
+  "Idli":       {cal:58,  protein:2.0, carbs:11.6, fat:0.4,  fiber:0.5,  iron:0.4,  calcium:8,   vitC:0,    vitD:0,   vitB12:0,   zinc:0.3,  magnesium:10,  potassium:55,  folate:10},
+  "Dosa":       {cal:133, protein:3.6, carbs:25,   fat:2.3,  fiber:1.0,  iron:0.9,  calcium:21,  vitC:0,    vitD:0,   vitB12:0,   zinc:0.5,  magnesium:15,  potassium:80,  folate:12},
+  "Spinach":    {cal:23,  protein:2.9, carbs:3.6,  fat:0.4,  fiber:2.2,  iron:2.7,  calcium:99,  vitC:28.1, vitD:0,   vitB12:0,   zinc:0.5,  magnesium:79,  potassium:558, folate:194},
+  // ── 40 New Foods ──
+  "Brown Rice":      {cal:123, protein:2.7, carbs:25.6, fat:0.9,  fiber:1.8,  iron:0.5,  calcium:10,  vitC:0,    vitD:0,   vitB12:0,   zinc:0.6,  magnesium:44,  potassium:79,  folate:9},
+  "Soya Chunks":     {cal:345, protein:52,  carbs:26,   fat:0.5,  fiber:13,   iron:9.5,  calcium:350, vitC:0,    vitD:0,   vitB12:0,   zinc:2.5,  magnesium:60,  potassium:1800,folate:200},
+  "Moong Dal":       {cal:105, protein:7.0, carbs:19,   fat:0.4,  fiber:7.6,  iron:2.5,  calcium:27,  vitC:1.0,  vitD:0,   vitB12:0,   zinc:0.9,  magnesium:48,  potassium:270, folate:159},
+  "Toor Dal":        {cal:112, protein:7.2, carbs:19.5, fat:0.4,  fiber:5.3,  iron:1.8,  calcium:24,  vitC:0,    vitD:0,   vitB12:0,   zinc:0.9,  magnesium:41,  potassium:230, folate:99},
+  "Urad Dal":        {cal:341, protein:25,  carbs:58.9, fat:1.6,  fiber:18.3, iron:9.6,  calcium:138, vitC:0,    vitD:0,   vitB12:0,   zinc:3.4,  magnesium:143, potassium:983, folate:216},
+  "Atta (WW)":       {cal:340, protein:11,  carbs:72,   fat:1.7,  fiber:11.5, iron:3.5,  calcium:34,  vitC:0,    vitD:0,   vitB12:0,   zinc:2.6,  magnesium:137, potassium:405, folate:44},
+  "Suji":            {cal:360, protein:12,  carbs:73,   fat:1.1,  fiber:3.9,  iron:4.0,  calcium:17,  vitC:0,    vitD:0,   vitB12:0,   zinc:1.1,  magnesium:47,  potassium:186, folate:72},
+  "Besan":           {cal:387, protein:22,  carbs:58,   fat:6.7,  fiber:10.8, iron:6.2,  calcium:45,  vitC:0,    vitD:0,   vitB12:0,   zinc:2.8,  magnesium:166, potassium:846, folate:557},
+  "Sweet Potato":    {cal:86,  protein:1.6, carbs:20,   fat:0.1,  fiber:3.0,  iron:0.6,  calcium:30,  vitC:19.6, vitD:0,   vitB12:0,   zinc:0.3,  magnesium:25,  potassium:337, folate:11},
+  "Cauliflower":     {cal:25,  protein:1.9, carbs:5.0,  fat:0.3,  fiber:2.0,  iron:0.4,  calcium:22,  vitC:48.2, vitD:0,   vitB12:0,   zinc:0.3,  magnesium:15,  potassium:299, folate:57},
+  "Broccoli":        {cal:34,  protein:2.8, carbs:7.0,  fat:0.4,  fiber:2.6,  iron:0.7,  calcium:47,  vitC:89.2, vitD:0,   vitB12:0,   zinc:0.4,  magnesium:21,  potassium:316, folate:63},
+  "Carrot":          {cal:41,  protein:0.9, carbs:9.6,  fat:0.2,  fiber:2.8,  iron:0.3,  calcium:33,  vitC:5.9,  vitD:0,   vitB12:0,   zinc:0.2,  magnesium:12,  potassium:320, folate:19},
+  "Tomato":          {cal:18,  protein:0.9, carbs:3.9,  fat:0.2,  fiber:1.2,  iron:0.3,  calcium:10,  vitC:13.7, vitD:0,   vitB12:0,   zinc:0.2,  magnesium:11,  potassium:237, folate:15},
+  "Onion":           {cal:40,  protein:1.1, carbs:9.3,  fat:0.1,  fiber:1.7,  iron:0.2,  calcium:23,  vitC:7.4,  vitD:0,   vitB12:0,   zinc:0.2,  magnesium:10,  potassium:146, folate:19},
+  "Green Peas":      {cal:81,  protein:5.4, carbs:14.5, fat:0.4,  fiber:5.7,  iron:1.5,  calcium:25,  vitC:40,   vitD:0,   vitB12:0,   zinc:1.2,  magnesium:33,  potassium:244, folate:65},
+  "Pumpkin":         {cal:26,  protein:1.0, carbs:6.5,  fat:0.1,  fiber:0.5,  iron:0.8,  calcium:21,  vitC:9.0,  vitD:0,   vitB12:0,   zinc:0.3,  magnesium:12,  potassium:340, folate:16},
+  "Bitter Gourd":    {cal:17,  protein:1.0, carbs:3.7,  fat:0.2,  fiber:2.8,  iron:0.4,  calcium:19,  vitC:84,   vitD:0,   vitB12:0,   zinc:0.8,  magnesium:17,  potassium:296, folate:72},
+  "Ladies Finger":   {cal:33,  protein:1.9, carbs:7.5,  fat:0.2,  fiber:3.2,  iron:0.6,  calcium:81,  vitC:23.0, vitD:0,   vitB12:0,   zinc:0.6,  magnesium:57,  potassium:299, folate:60},
+  "Cucumber":        {cal:15,  protein:0.7, carbs:3.6,  fat:0.1,  fiber:0.5,  iron:0.3,  calcium:16,  vitC:2.8,  vitD:0,   vitB12:0,   zinc:0.2,  magnesium:13,  potassium:147, folate:7},
+  "Mango":           {cal:60,  protein:0.8, carbs:15,   fat:0.4,  fiber:1.6,  iron:0.2,  calcium:11,  vitC:36.4, vitD:0,   vitB12:0,   zinc:0.1,  magnesium:10,  potassium:168, folate:43},
+  "Orange":          {cal:47,  protein:0.9, carbs:11.8, fat:0.1,  fiber:2.4,  iron:0.1,  calcium:40,  vitC:53.2, vitD:0,   vitB12:0,   zinc:0.1,  magnesium:10,  potassium:181, folate:30},
+  "Guava":           {cal:68,  protein:2.6, carbs:14.3, fat:1.0,  fiber:5.4,  iron:0.3,  calcium:18,  vitC:228,  vitD:0,   vitB12:0,   zinc:0.2,  magnesium:22,  potassium:417, folate:49},
+  "Papaya":          {cal:43,  protein:0.5, carbs:11,   fat:0.3,  fiber:1.7,  iron:0.2,  calcium:20,  vitC:60.9, vitD:0,   vitB12:0,   zinc:0.1,  magnesium:21,  potassium:182, folate:37},
+  "Peanuts":         {cal:567, protein:26,  carbs:16,   fat:49,   fiber:8.5,  iron:4.6,  calcium:92,  vitC:0,    vitD:0,   vitB12:0,   zinc:3.3,  magnesium:168, potassium:705, folate:240},
+  "Almonds":         {cal:579, protein:21,  carbs:22,   fat:50,   fiber:12.5, iron:3.7,  calcium:264, vitC:0,    vitD:0,   vitB12:0,   zinc:3.1,  magnesium:270, potassium:733, folate:44},
+  "Walnuts":         {cal:654, protein:15,  carbs:14,   fat:65,   fiber:6.7,  iron:2.9,  calcium:98,  vitC:1.3,  vitD:0,   vitB12:0,   zinc:3.1,  magnesium:158, potassium:441, folate:98},
+  "Sesame Seeds":    {cal:573, protein:18,  carbs:23,   fat:50,   fiber:11.8, iron:14.6, calcium:975, vitC:0,    vitD:0,   vitB12:0,   zinc:7.8,  magnesium:351, potassium:468, folate:97},
+  "Flaxseeds":       {cal:534, protein:18,  carbs:29,   fat:42,   fiber:27,   iron:5.7,  calcium:255, vitC:0.6,  vitD:0,   vitB12:0,   zinc:4.3,  magnesium:392, potassium:813, folate:87},
+  "Ghee":            {cal:900, protein:0,   carbs:0,    fat:99.5, fiber:0,    iron:0,    calcium:4,   vitC:0,    vitD:0.6, vitB12:0,   zinc:0.1,  magnesium:0,   potassium:5,   folate:0},
+  "Coconut Oil":     {cal:892, protein:0,   carbs:0,    fat:99.1, fiber:0,    iron:0,    calcium:1,   vitC:0,    vitD:0,   vitB12:0,   zinc:0,    magnesium:0,   potassium:1,   folate:0},
+  "Mutton":          {cal:218, protein:18,  carbs:0,    fat:16,   fiber:0,    iron:2.7,  calcium:9,   vitC:0,    vitD:0.5, vitB12:2.6, zinc:4.5,  magnesium:20,  potassium:273, folate:7},
+  "Prawns":          {cal:99,  protein:21,  carbs:0.9,  fat:1.7,  fiber:0,    iron:2.4,  calcium:64,  vitC:0,    vitD:0.6, vitB12:1.2, zinc:1.3,  magnesium:37,  potassium:220, folate:34},
+  "Tuna (canned)":   {cal:132, protein:29,  carbs:0,    fat:1.0,  fiber:0,    iron:1.3,  calcium:12,  vitC:0,    vitD:4.0, vitB12:3.1, zinc:0.9,  magnesium:38,  potassium:267, folate:4},
+  "Tofu":            {cal:76,  protein:8.1, carbs:1.9,  fat:4.8,  fiber:0.3,  iron:5.4,  calcium:350, vitC:0.1,  vitD:0,   vitB12:0,   zinc:0.8,  magnesium:30,  potassium:121, folate:15},
+  "Quinoa":          {cal:368, protein:14,  carbs:64,   fat:6.1,  fiber:7.0,  iron:4.6,  calcium:47,  vitC:0,    vitD:0,   vitB12:0,   zinc:3.1,  magnesium:197, potassium:563, folate:184},
+  "Greek Yogurt":    {cal:97,  protein:9.0, carbs:3.6,  fat:5.0,  fiber:0,    iron:0.1,  calcium:100, vitC:0,    vitD:0.1, vitB12:0.4, zinc:0.5,  magnesium:11,  potassium:141, folate:7},
+  "Cheese":          {cal:402, protein:25,  carbs:1.3,  fat:33,   fiber:0,    iron:0.7,  calcium:721, vitC:0,    vitD:0.4, vitB12:0.8, zinc:3.1,  magnesium:28,  potassium:98,  folate:18},
+  "Beetroot":        {cal:43,  protein:1.6, carbs:9.9,  fat:0.2,  fiber:2.8,  iron:0.8,  calcium:16,  vitC:4.9,  vitD:0,   vitB12:0,   zinc:0.4,  magnesium:23,  potassium:325, folate:109},
+  "Corn":            {cal:86,  protein:3.3, carbs:19,   fat:1.4,  fiber:2.7,  iron:0.5,  calcium:2,   vitC:6.8,  vitD:0,   vitB12:0,   zinc:0.5,  magnesium:37,  potassium:270, folate:42},
+  "Mushroom":        {cal:22,  protein:3.1, carbs:3.3,  fat:0.3,  fiber:1.0,  iron:0.5,  calcium:3,   vitC:2.1,  vitD:1.4, vitB12:0,   zinc:0.5,  magnesium:9,   potassium:318, folate:17},
+};
+
+const UNIT_MUL = {g:1, ml:1, piece:1, cup:2.4, tbsp:0.15, katori:1.5};
+const KEYS = ['cal','protein','carbs','fat','fiber','iron','calcium','vitC','vitD','vitB12','zinc','magnesium','potassium','folate'];
+const LABELS = {
+  cal:'Calories', protein:'Protein', carbs:'Carbohydrates', fat:'Fat',
+  fiber:'Dietary Fiber', iron:'Iron', calcium:'Calcium',
+  vitC:'Vitamin C', vitD:'Vitamin D', vitB12:'Vitamin B12',
+  zinc:'Zinc', magnesium:'Magnesium', potassium:'Potassium', folate:'Folate (B9)'
+};
+const UNITS_D = {
+  cal:'kcal', protein:'g', carbs:'g', fat:'g', fiber:'g',
+  iron:'mg', calcium:'mg', vitC:'mg', vitD:'µg', vitB12:'µg',
+  zinc:'mg', magnesium:'mg', potassium:'mg', folate:'µg'
+};
+const SOURCE_FOODS = {
+  cal:'Rice, Roti, Bread', protein:'Chicken, Soya Chunks, Paneer', carbs:'Rice, Oats, Quinoa',
+  fat:'Ghee, Almonds, Fish', fiber:'Oats, Rajma, Flaxseeds', iron:'Sesame Seeds, Soya Chunks, Dal',
+  calcium:'Sesame Seeds, Paneer, Cheese', vitC:'Guava, Bitter Gourd, Broccoli',
+  vitD:'Fish, Egg, Mushroom', vitB12:'Fish, Mutton, Egg',
+  zinc:'Sesame Seeds, Oats, Mutton', magnesium:'Flaxseeds, Quinoa, Oats',
+  potassium:'Soya Chunks, Flaxseeds, Guava', folate:'Besan, Urad Dal, Spinach'
+};
+
+/* ── State ── */
+let profile = {age:22, gender:'male', height:170, weight:65, activity:1.375, diet:'nonveg', goal:'maintain', condition:'none'};
+let logEntries = [];
+let targets = {};
+let planData = {1:{breakfast:[],lunch:[],snack:[],dinner:[]}, 2:{breakfast:[],lunch:[],snack:[],dinner:[]}};
+let activePlanDay = 1;
+let charts = {};
+let waterCount = 0;
+let aiHistory = []; // {role, content}
+
+/* ── PERSISTENCE ── */
+function saveToStorage(){
+  try{
+    localStorage.setItem('ns3_profile', JSON.stringify(profile));
+    localStorage.setItem('ns3_log', JSON.stringify(logEntries));
+    localStorage.setItem('ns3_plan', JSON.stringify(planData));
+    localStorage.setItem('ns3_water', waterCount);
+  }catch(e){}
+}
+function loadFromStorage(){
+  try{
+    const p = localStorage.getItem('ns3_profile');
+    if(p) profile = {...profile, ...JSON.parse(p)};
+    const l = localStorage.getItem('ns3_log');
+    if(l) logEntries = JSON.parse(l);
+    const pl = localStorage.getItem('ns3_plan');
+    if(pl) planData = JSON.parse(pl);
+    const w = localStorage.getItem('ns3_water');
+    if(w!==null) waterCount = +w;
+  }catch(e){}
+}
+function exportData(){
+  const data = {profile, logEntries, planData, waterCount, exportedAt: new Date().toISOString()};
+  const a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2));
+  a.download = 'nutriscope_backup.json'; a.click();
+  showToast('Data exported ✓');
+}
+function importData(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.profile) profile = data.profile;
+      if(data.logEntries) logEntries = data.logEntries;
+      if(data.planData) planData = data.planData;
+      if(data.waterCount!==undefined) waterCount = data.waterCount;
+      applyProfileToForm(); computeTargets(); renderStatRow();
+      renderLogTable(); renderDashboard(); renderRecs(); renderRisk();
+      renderPlanSlots(); renderWater();
+      saveToStorage();
+      showToast('Data imported ✓');
+    }catch(e){ showToast('Import failed — invalid JSON'); }
+  };
+  reader.readAsText(file);
+}
+function applyProfileToForm(){
+  ['age','gender','height','weight','activity','diet','goal','condition'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && profile[id]!==undefined) el.value = profile[id];
+  });
+}
+
+/* ── WATER TRACKER ── */
+function renderWater(){
+  const wrap = document.getElementById('waterCups');
+  wrap.innerHTML = Array.from({length:8}, (_,i) =>
+    `<span class="cup ${i<waterCount?'filled':''}" onclick="toggleWater(${i})">💧</span>`
+  ).join('');
+  document.getElementById('waterCount').textContent = waterCount;
+  const msgs = ['Start hydrating! Tap a glass to track.','Great start! Keep going.','Halfway there!','Good progress!','Well hydrated! Keep it up.','Almost there!','Almost full!','Great job! Daily goal met! 🎉'];
+  document.getElementById('waterMsg').textContent = msgs[Math.min(waterCount, msgs.length-1)];
+}
+function toggleWater(i){
+  waterCount = (i < waterCount) ? i : i+1;
+  renderWater(); saveToStorage();
+}
+
+/* ── AI COACH ── */
+async function sendAiMessage(){
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  sendAiPrompt(msg);
+}
+async function sendAiPrompt(msg){
+  // Remove empty state
+  const wrap = document.getElementById('aiChatWrap');
+  const empty = wrap.querySelector('.ai-empty');
+  if(empty) empty.remove();
+
+  // Add user message
+  appendAiMessage('user', msg);
+  aiHistory.push({role:'user', content: msg});
+
+  // Build context
+  const t = getTotals();
+  const contextLines = [
+    `User profile: age ${profile.age}, gender ${profile.gender}, height ${profile.height}cm, weight ${profile.weight}kg, activity factor ${profile.activity}, diet: ${dietLabel(profile.diet)}, goal: ${profile.goal}, health condition: ${profile.condition}.`,
+    `Calorie target: ${targets.cal} kcal/day. Protein target: ${targets.protein}g. TDEE: ${targets._tdee} kcal.`,
+    `Today's food log (${logEntries.length} entries): ${logEntries.length ? logEntries.map(e=>`${e.name} ${e.qty}${e.unit}`).join(', ') : 'nothing logged yet'}.`,
+    logEntries.length ? `Nutrient totals — Calories: ${Math.round(t.cal)} kcal (${Math.round(t.cal/targets.cal*100)}% of target), Protein: ${t.protein.toFixed(1)}g (${Math.round(t.protein/targets.protein*100)}%), Carbs: ${t.carbs.toFixed(1)}g, Fat: ${t.fat.toFixed(1)}g, Fiber: ${t.fiber.toFixed(1)}g, Iron: ${t.iron.toFixed(1)}mg (${Math.round(t.iron/targets.iron*100)}%), Calcium: ${t.calcium.toFixed(1)}mg (${Math.round(t.calcium/targets.calcium*100)}%), Vitamin D: ${t.vitD.toFixed(1)}µg (${Math.round(t.vitD/targets.vitD*100)}%), Vitamin B12: ${t.vitB12.toFixed(2)}µg (${Math.round(t.vitB12/targets.vitB12*100)}%), Zinc: ${t.zinc.toFixed(1)}mg, Folate: ${t.folate.toFixed(1)}µg.` : '',
+    `Water intake today: ${waterCount}/8 glasses.`,
+  ].filter(Boolean).join(' ');
+
+  const systemPrompt = `You are NutriScope's AI Nutrition Coach — a knowledgeable, warm, and practical nutrition advisor. You have access to the user's complete nutritional profile and today's food log. Provide specific, actionable, personalised advice. Mention exact nutrient values from their data when relevant. Filter food suggestions based on their dietary preference (${dietLabel(profile.diet)}). Keep responses concise and conversational — 150-250 words unless a detailed breakdown is needed. Never recommend specific supplements without suggesting they consult a doctor. Use emojis sparingly but naturally. Reference ICMR-NIN/WHO standards when citing nutrient targets.\n\nUser context: ${contextLines}`;
+
+  // Add loading bubble
+  const loadId = 'ai-load-' + Date.now();
+  wrap.innerHTML += `<div class="ai-message" id="${loadId}"><div class="ai-avatar claude">✦</div><div class="ai-bubble streaming" id="${loadId}-bubble">Analysing your nutrition data…</div></div>`;
+  wrap.scrollTop = wrap.scrollHeight;
+  document.getElementById('aiSendBtn').disabled = true;
+
+  try{
+    const messages = aiHistory.slice(-10); // last 5 turns
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages
+      })
+    });
+    const data = await res.json();
+    const reply = (data.content||[]).map(b=>b.type==='text'?b.text:'').join('');
+    const bubble = document.getElementById(loadId+'-bubble');
+    if(bubble){
+      bubble.classList.remove('streaming');
+      bubble.textContent = reply || 'Sorry, I had trouble generating a response. Please try again.';
+    }
+    aiHistory.push({role:'assistant', content: reply});
+  }catch(e){
+    const bubble = document.getElementById(loadId+'-bubble');
+    if(bubble){ bubble.classList.remove('streaming'); bubble.textContent = '⚠️ Connection error. Please check your internet and try again.'; }
+  }
+  document.getElementById('aiSendBtn').disabled = false;
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function appendAiMessage(role, content){
+  const wrap = document.getElementById('aiChatWrap');
+  const avatarHtml = role==='user'
+    ? `<div class="ai-avatar user">👤</div>`
+    : `<div class="ai-avatar claude">✦</div>`;
+  wrap.innerHTML += `<div class="ai-message"><div class="ai-avatar ${role}">${role==='user'?'👤':'✦'}</div><div class="ai-bubble ${role}">${content}</div></div>`;
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+const SLOT_META = {
+  breakfast:{icon:'🌅', label:'Breakfast'},
+  lunch:{icon:'☀️', label:'Lunch'},
+  snack:{icon:'🍎', label:'Snack'},
+  dinner:{icon:'🌙', label:'Dinner'}
+};
+
+/* ── Init ── */
+(function init(){
+  loadFromStorage();
+  populateFoodSelects();
+  applyProfileToForm();
+  listenProfile();
+  computeTargets();
+  renderStatRow();
+  renderDashboard();
+  renderRecs();
+  renderFoodDbTable();
+  renderPlanSlots();
+  renderWater();
+  // Auto-save on any log change
+  const origAdd = addFoodEntry;
+  const origRemove = removeEntry;
+  const origClear = clearLog;
+})();
+
+function populateFoodSelects(){
+  const names = Object.keys(FOODS).sort();
+  [document.getElementById('foodSelect'), document.getElementById('planFoodSel')].forEach(sel=>{
+    if(!sel) return;
+    names.forEach(f=>{
+      const o = document.createElement('option');
+      o.value = f; o.textContent = f;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function listenProfile(){
+  ['age','gender','height','weight','activity','diet','goal','condition'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', ()=>{ readProfile(); computeTargets(); renderStatRow(); });
+  });
+}
+function readProfile(){
+  profile.age = +document.getElementById('age').value || 22;
+  profile.gender = document.getElementById('gender').value;
+  profile.height = +document.getElementById('height').value || 170;
+  profile.weight = +document.getElementById('weight').value || 65;
+  profile.activity = +document.getElementById('activity').value || 1.375;
+  profile.diet = document.getElementById('diet').value;
+  profile.goal = document.getElementById('goal').value;
+  profile.condition = document.getElementById('condition').value;
+}
+function computeTargets(){
+  const {age, gender, height, weight, activity, goal, condition} = profile;
+  let bmr = gender==='male' ? 10*weight+6.25*height-5*age+5 : 10*weight+6.25*height-5*age-161;
+  let tdee = Math.round(bmr * activity);
+  let calTarget = tdee + (goal==='lose'?-300:goal==='gain'?300:0);
+  // condition overrides
+  let ironTarget = gender==='female' ? 18 : 8;
+  let calciumTarget = 1000, folateTarget = 400;
+  if(condition==='pregnancy'){ ironTarget=27; calciumTarget=1200; folateTarget=600; calTarget+=300; }
+  if(condition==='anaemia') ironTarget = gender==='female'?27:18;
+  if(condition==='osteoporosis') calciumTarget=1200;
+  const bmi = (weight/((height/100)**2)).toFixed(1);
+  let proteinMulti = goal==='gain' ? 1.8 : 1.6;
+  targets = {
+    cal: calTarget, protein: Math.round(weight*proteinMulti),
+    carbs: Math.round(calTarget*0.45/4), fat: Math.round(calTarget*0.30/9),
+    fiber: 30, iron: ironTarget, calcium: calciumTarget,
+    vitC: 65, vitD: 15, vitB12: 2.4,
+    zinc: gender==='female'?8:11, magnesium: gender==='female'?310:400,
+    potassium: 3500, folate: folateTarget,
+    _bmr: Math.round(bmr), _tdee: tdee, _bmi: bmi
+  };
+}
+function bmiCategory(bmi){
+  if(bmi<18.5) return 'Underweight';
+  if(bmi<23)   return 'Normal';
+  if(bmi<27.5) return 'Overweight';
+  return 'Obese';
+}
+function renderStatRow(){
+  document.getElementById('statBMR').textContent = targets._bmr;
+  document.getElementById('statTDEE').textContent = targets._tdee;
+  document.getElementById('statTarget').textContent = targets.cal;
+  document.getElementById('statBMI').textContent = targets._bmi;
+  document.getElementById('statProtein').textContent = targets.protein;
+  document.getElementById('statBMIcat').textContent = bmiCategory(targets._bmi);
+}
+function saveProfile(){
+  readProfile(); computeTargets(); renderStatRow();
+  renderDashboard(); renderRecs(); renderRisk();
+  saveToStorage();
+  showTab('log');
+  showToast('Profile saved ✓');
+}
+
+/* ── TABS ── */
+function showTab(tab){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('section-'+tab).classList.add('visible');
+  const tabMap = {profile:0,log:1,planner:2,dashboard:3,risk:4,insights:5,sources:6,ai:7};
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', i===tabMap[tab]));
+  document.querySelectorAll('.mobile-nav button').forEach((b,i)=>b.classList.toggle('active', i===tabMap[tab]));
+  if(tab==='dashboard') setTimeout(()=>{ renderDashboard(); }, 40);
+  if(tab==='risk') renderRisk();
+  if(tab==='insights') renderRecs();
+}
+
+/* ── FOOD LOG ── */
+function getMultiplier(unit, qty){
+  const mul = UNIT_MUL[unit] || 1;
+  return qty * mul / 100;
+}
+function addFoodEntry(){
+  const name = document.getElementById('foodSelect').value;
+  const qty = +document.getElementById('foodQty').value;
+  const unit = document.getElementById('foodUnit').value;
+  if(!name || !qty){ showToast('Select a food and quantity'); return; }
+  logEntries.push({id:Date.now(), name, qty, unit});
+  renderLogTable(); renderDashboard(); renderRecs(); renderRisk(); saveToStorage();
+}
+function removeEntry(id){
+  logEntries = logEntries.filter(e=>e.id!==id);
+  renderLogTable(); renderDashboard(); renderRecs(); renderRisk(); saveToStorage();
+}
+function updateQty(id, val){
+  const e = logEntries.find(e=>e.id===id);
+  if(e){ e.qty = Math.max(1, +val||1); updateLogFooter(); renderDashboard(); renderRecs(); renderRisk(); saveToStorage(); }
+}
+function clearLog(){
+  if(!logEntries.length) return;
+  logEntries = [];
+  renderLogTable(); renderDashboard(); renderRecs(); renderRisk(); saveToStorage();
+  showToast('Log cleared');
+}
+function updateLogFooter(){
+  const t = getTotals();
+  document.getElementById('logCount').textContent = logEntries.length;
+  document.getElementById('logCals').textContent = Math.round(t.cal);
+  document.getElementById('topbarCals').textContent = Math.round(t.cal);
+}
+function renderLogTable(){
+  const tbody = document.getElementById('logBody');
+  if(!logEntries.length){
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="ico">🍽️</div>No entries yet — add your first meal above</div></td></tr>`;
+    updateLogFooter(); return;
+  }
+  tbody.innerHTML = logEntries.map(e=>{
+    const f=FOODS[e.name], m=getMultiplier(e.unit,e.qty);
+    return `<tr>
+      <td><strong>${e.name}</strong></td>
+      <td><input class="qty-input" type="number" value="${e.qty}" min="1" onchange="updateQty(${e.id},this.value)"></td>
+      <td style="color:var(--text-secondary)">${e.unit}</td>
+      <td style="color:var(--accent);font-family:var(--font-mono)">${Math.round(f.cal*m)}</td>
+      <td style="font-family:var(--font-mono)">${(f.protein*m).toFixed(1)}g</td>
+      <td style="font-family:var(--font-mono)">${(f.carbs*m).toFixed(1)}g</td>
+      <td style="font-family:var(--font-mono)">${(f.fat*m).toFixed(1)}g</td>
+      <td style="font-family:var(--font-mono)">${(f.fiber*m).toFixed(1)}g</td>
+      <td><button class="btn btn-danger" onclick="removeEntry(${e.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+  updateLogFooter();
+}
+function getTotals(entries){
+  entries = entries || logEntries;
+  const t = {};
+  KEYS.forEach(k=>t[k]=0);
+  entries.forEach(e=>{ const f=FOODS[e.name], m=getMultiplier(e.unit,e.qty); KEYS.forEach(k=>t[k]+=(f[k]||0)*m); });
+  return t;
+}
+
+/* ── CSV UPLOAD ── */
+function handleDragOver(e){ e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function handleDrop(e){ e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over'); handleCSV(e.dataTransfer.files[0]); }
+function handleCSV(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const lines = ev.target.result.split('\n').filter(l=>l.trim());
+    let added=0, skipped=0;
+    lines.forEach(line=>{
+      const parts = line.split(',').map(s=>s.trim());
+      if(parts.length < 2) return;
+      const name = parts[0], qty = parseFloat(parts[1]), unit = parts[2]||'g';
+      const matchKey = Object.keys(FOODS).find(k=>k.toLowerCase()===name.toLowerCase());
+      if(matchKey && qty>0){ logEntries.push({id:Date.now()+Math.random(), name:matchKey, qty, unit}); added++; }
+      else skipped++;
+    });
+    renderLogTable(); renderDashboard(); renderRecs(); renderRisk(); saveToStorage();
+    showToast(`CSV loaded: ${added} added, ${skipped} skipped`);
+  };
+  reader.readAsText(file);
+}
+function downloadSampleCSV(){
+  const content = `Food,Quantity,Unit\nRice,150,g\nDal,100,g\nSpinach,80,g\nChicken,100,g\nCurd,120,g`;
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(content);
+  a.download = 'nutrisope_sample.csv'; a.click();
+}
+
+/* ── MEAL PLANNER ── */
+function switchPlanDay(day, el){
+  activePlanDay = day;
+  document.querySelectorAll('.day-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('planDayLabel').textContent = 'Day '+day;
+  renderPlanSlots();
+}
+function addToPlan(){
+  const slot = document.getElementById('planSlotSel').value;
+  const food = document.getElementById('planFoodSel').value;
+  const qty = +document.getElementById('planQty').value;
+  if(!food||!qty) return;
+  planData[activePlanDay][slot].push({id:Date.now(), name:food, qty, unit:'g'});
+  renderPlanSlots(); renderPlanSummary(); saveToStorage();
+}
+function removePlanItem(day, slot, id){
+  planData[day][slot] = planData[day][slot].filter(i=>i.id!==id);
+  renderPlanSlots(); renderPlanSummary(); saveToStorage();
+}
+function renderPlanSlots(){
+  const day = activePlanDay;
+  const container = document.getElementById('planSlots');
+  container.innerHTML = ['breakfast','lunch','snack','dinner'].map(slot=>{
+    const items = planData[day][slot];
+    const slotCal = items.reduce((s,i)=>s+(FOODS[i.name].cal*i.qty/100),0);
+    return `<div class="meal-slot">
+      <div class="meal-slot-header">
+        <div class="meal-slot-title">${SLOT_META[slot].icon} ${SLOT_META[slot].label}</div>
+        <span class="chip chip-green">${Math.round(slotCal)} kcal</span>
+      </div>
+      ${items.length ? items.map(i=>`
+        <div class="meal-item">
+          <span class="mi-name">${i.name} · ${i.qty}g</span>
+          <span class="mi-cal">${Math.round(FOODS[i.name].cal*i.qty/100)} kcal
+            <button class="btn btn-danger" style="margin-left:8px;padding:2px 7px;font-size:11px" onclick="removePlanItem(${day},'${slot}',${i.id})">✕</button>
+          </span>
+        </div>`).join('') : '<div style="font-size:12px;color:var(--text-muted);padding:4px 0">No items — add below</div>'}
+    </div>`;
+  }).join('');
+  renderPlanSummary();
+}
+function renderPlanSummary(){
+  const day = activePlanDay;
+  const allItems = ['breakfast','lunch','snack','dinner'].flatMap(s=>planData[day][s]);
+  const t = getTotals(allItems.map(i=>({...i, unit:'g'})));
+  const container = document.getElementById('planSummary');
+  if(!allItems.length){ container.innerHTML='<div class="empty-state"><div class="ico">📋</div>Add foods to see the plan nutrition</div>'; renderPlanTips(null); return; }
+  const macros = [{k:'cal',c:'var(--accent)',l:'Calories'},{k:'protein',c:'#60a5fa',l:'Protein'},{k:'carbs',c:'#fbbf24',l:'Carbs'},{k:'fat',c:'#f472b6',l:'Fat'},{k:'fiber',c:'#34d399',l:'Fiber'}];
+  container.innerHTML = macros.map(m=>{
+    const pct = Math.min(Math.round((t[m.k]/targets[m.k])*100),100);
+    return `<div class="macro-pill" style="margin-bottom:10px">
+      <div class="macro-pill-top"><span class="name" style="color:${m.c}">${m.l}</span>
+      <span class="nums">${m.k==='cal'?Math.round(t[m.k]):t[m.k].toFixed(1)} ${UNITS_D[m.k]} / ${targets[m.k]} ${UNITS_D[m.k]}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${m.c}"></div></div>
+    </div>`;
+  }).join('');
+  renderPlanTips(t);
+}
+function renderPlanTips(t){
+  const el = document.getElementById('planTips');
+  if(!t){ el.textContent='Build your plan and tips will appear based on nutrient gaps.'; return; }
+  const tips = [];
+  if(t.protein < targets.protein*0.7) tips.push('⚠️ Protein is low — add Dal, Paneer, or Chicken to a meal slot.');
+  if(t.fiber < targets.fiber*0.5) tips.push('🌾 Fiber is below half target — include Oats, Rajma, or Broccoli.');
+  if(t.cal < targets.cal*0.7) tips.push('⚡ Energy is significantly low — consider a larger lunch or extra snack.');
+  if(t.cal > targets.cal*1.25) tips.push('🔺 Calorie plan exceeds target by more than 25% — consider reducing portions.');
+  if(t.iron < targets.iron*0.5) tips.push('🩸 Iron is very low — pair Spinach or Dal with a Vitamin C source for better absorption.');
+  if(t.vitD < targets.vitD*0.3) tips.push('☀️ Vitamin D is very low — include Fish, Eggs, or Mushroom in the plan.');
+  el.innerHTML = tips.length ? tips.map(t=>`<div style="margin-bottom:6px">${t}</div>`).join('') : '<span style="color:var(--accent)">✅ Plan looks nutritionally balanced!</span>';
+}
+
+/* ── DASHBOARD ── */
+function renderDashboard(){
+  const t = getTotals();
+  renderEnergyRing(t); renderMacroChart(t); renderRadarChart(t);
+  renderCompletionChart(t); renderInsights(t); renderNutrientTable(t);
+}
+function destroyChart(key){ if(charts[key]){ charts[key].destroy(); charts[key]=null; } }
+
+function renderEnergyRing(t){
+  const pct = Math.min(Math.round((t.cal/targets.cal)*100),200);
+  const filled = Math.min(pct,100);
+  const over = pct>100;
+  document.getElementById('energyPct').textContent = pct+'%';
+  document.getElementById('energyKcalLabel').textContent = Math.round(t.cal)+' / '+targets.cal;
+  destroyChart('energy');
+  const ctx = document.getElementById('energyRing').getContext('2d');
+  charts.energy = new Chart(ctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[filled,100-filled],backgroundColor:[over?'#f87171':'#4ade80','rgba(255,255,255,.04)'],borderWidth:0,borderRadius:4}]},
+    options:{cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
+  });
+  const macros = [{k:'protein',c:'#60a5fa',l:'Protein'},{k:'carbs',c:'#fbbf24',l:'Carbs'},{k:'fat',c:'#f472b6',l:'Fat'}];
+  document.getElementById('macroPills').innerHTML = macros.map(m=>{
+    const pct = Math.min(Math.round((t[m.k]/targets[m.k])*100),100);
+    return `<div class="macro-pill">
+      <div class="macro-pill-top"><span class="name" style="color:${m.c}">${m.l}</span>
+      <span class="nums">${t[m.k].toFixed(1)}g / ${targets[m.k]}g</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${m.c}"></div></div>
+    </div>`;
+  }).join('');
+}
+function renderMacroChart(t){
+  destroyChart('macro');
+  const ctx = document.getElementById('macroChart').getContext('2d');
+  const pCal=t.protein*4, cCal=t.carbs*4, fCal=t.fat*9;
+  const total=pCal+cCal+fCal||1;
+  charts.macro = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Protein','Carbs','Fat'],
+      datasets:[
+        {label:'Consumed kcal',data:[pCal,cCal,fCal],backgroundColor:['rgba(96,165,250,.8)','rgba(251,191,36,.8)','rgba(244,114,182,.8)'],borderRadius:6,borderSkipped:false},
+        {label:'Target kcal',data:[targets.protein*4,targets.carbs*4,targets.fat*9],backgroundColor:['rgba(96,165,250,.2)','rgba(251,191,36,.2)','rgba(244,114,182,.2)'],borderRadius:6,borderSkipped:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#7a8caa',boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>` ${c.raw} kcal (${Math.round(c.raw/total*100)}%)`}}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#7a8caa'}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7a8caa'}}},animation:{duration:600}}
+  });
+}
+function renderRadarChart(t){
+  destroyChart('radar');
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  const microKeys = ['iron','calcium','vitC','vitD','vitB12','zinc','magnesium','folate'];
+  const data = microKeys.map(k=>Math.min(Math.round((t[k]/targets[k])*100),150));
+  const lbls = microKeys.map(k=>LABELS[k]);
+  charts.radar = new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:lbls,
+      datasets:[
+        {label:'% of Target',data,backgroundColor:'rgba(74,222,128,.12)',borderColor:'#4ade80',borderWidth:2,pointBackgroundColor:'#4ade80',pointRadius:3},
+        {label:'100% Target',data:microKeys.map(()=>100),backgroundColor:'transparent',borderColor:'rgba(255,255,255,.1)',borderWidth:1,borderDash:[4,4],pointRadius:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:150,ticks:{display:false,stepSize:50},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#7a8caa',font:{size:10}},angleLines:{color:'rgba(255,255,255,.07)'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}% of target`}}},animation:{duration:600}}
+  });
+}
+function renderCompletionChart(t){
+  destroyChart('completion');
+  const ctx = document.getElementById('completionChart').getContext('2d');
+  const displayKeys = KEYS.filter(k=>k!=='cal');
+  const pcts = displayKeys.map(k=>Math.min(Math.round((t[k]/targets[k])*100),150));
+  const colors = pcts.map(p=> p<50?'rgba(248,113,113,.8)':p<80?'rgba(245,158,11,.8)':p>130?'rgba(248,113,113,.7)':'rgba(74,222,128,.8)');
+  charts.completion = new Chart(ctx,{
+    type:'bar',
+    data:{labels:displayKeys.map(k=>LABELS[k]),datasets:[{label:'% Complete',data:pcts,backgroundColor:colors,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}%`}}},scales:{x:{min:0,max:150,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7a8caa',callback:v=>v+'%'}},y:{grid:{display:false},ticks:{color:'#7a8caa',font:{size:10}}}},animation:{duration:600}}
+  });
+}
+function renderInsights(t){
+  const defl = document.getElementById('deficiencyList');
+  const excl = document.getElementById('excessList');
+  if(!logEntries.length){
+    defl.innerHTML='<div class="empty-state" style="padding:20px">Log food to see gaps</div>';
+    excl.innerHTML='<div class="empty-state" style="padding:20px">Log food to see excesses</div>'; return;
+  }
+  const arr = KEYS.filter(k=>k!=='cal').map(k=>({k,pct:(targets[k]?(t[k]/targets[k])*100:100),consumed:t[k],target:targets[k]}));
+  const defs = arr.filter(x=>x.pct<80).sort((a,b)=>a.pct-b.pct).slice(0,5);
+  const excs = arr.filter(x=>x.pct>120).sort((a,b)=>b.pct-a.pct).slice(0,5);
+  defl.innerHTML = defs.length ? defs.map(d=>`<div class="insight-item">
+    <div class="insight-dot" style="background:#f59e0b"></div>
+    <div><div class="name">${LABELS[d.k]} <span class="chip chip-amber">${Math.round(d.pct)}%</span></div>
+    <div class="detail">${d.consumed.toFixed(1)} ${UNITS_D[d.k]} of ${d.target} ${UNITS_D[d.k]} target · Good sources: ${SOURCE_FOODS[d.k]}</div></div>
+  </div>`).join('') : '<div class="empty-state" style="padding:16px">✅ No major deficiencies</div>';
+  excl.innerHTML = excs.length ? excs.map(d=>`<div class="insight-item">
+    <div class="insight-dot" style="background:#f87171"></div>
+    <div><div class="name">${LABELS[d.k]} <span class="chip chip-red">${Math.round(d.pct)}%</span></div>
+    <div class="detail">${d.consumed.toFixed(1)} ${UNITS_D[d.k]} vs ${d.target} ${UNITS_D[d.k]} target</div></div>
+  </div>`).join('') : '<div class="empty-state" style="padding:16px">✅ No significant excesses</div>';
+}
+function renderNutrientTable(t){
+  const tbody = document.getElementById('nutrientBody');
+  tbody.innerHTML = KEYS.map(k=>{
+    const pct = targets[k]?Math.round((t[k]/targets[k])*100):0;
+    const cap = Math.min(pct,100);
+    let col='#4ade80', status='<span class="chip chip-green">On Track</span>';
+    if(pct<50){ col='#f87171'; status='<span class="chip chip-red">Low</span>'; }
+    else if(pct<80){ col='#f59e0b'; status='<span class="chip chip-amber">Below Target</span>'; }
+    else if(pct>150){ col='#f87171'; status='<span class="chip chip-red">Excess</span>'; }
+    else if(pct>120){ col='#f59e0b'; status='<span class="chip chip-amber">Above Target</span>'; }
+    return `<tr>
+      <td><strong>${LABELS[k]}</strong></td>
+      <td style="font-family:var(--font-mono)">${t[k].toFixed(k==='cal'?0:1)} ${UNITS_D[k]}</td>
+      <td style="font-family:var(--font-mono);color:var(--text-muted)">${targets[k]} ${UNITS_D[k]}</td>
+      <td><div class="pct-bar"><div class="bar"><div class="fill" style="width:${cap}%;background:${col}"></div></div><span class="pct-label" style="color:${col}">${pct}%</span></div></td>
+      <td>${status}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${SOURCE_FOODS[k]||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── RISK ANALYSIS ── */
+const RISK_FACTORS = [
+  {id:'anaemia',  label:'Anaemia Risk',       keys:['iron','vitB12','folate'],  direction:'low', weights:[.5,.3,.2], info:'Persistent iron, B12 or folate deficiency can lead to iron-deficiency or megaloblastic anaemia, causing fatigue, weakness, and reduced immunity.'},
+  {id:'bone',     label:'Bone Health Risk',   keys:['calcium','vitD','magnesium'], direction:'low', weights:[.5,.35,.15], info:'Chronic calcium and Vitamin D deficiency increases risk of osteopenia, osteoporosis, and stress fractures, especially in women post-30.'},
+  {id:'cardio',   label:'Cardiovascular Risk',keys:['fat','fiber','potassium'], direction:'mixed', weights:[.4,.35,.25], info:'High saturated fat intake combined with low fiber and potassium is associated with elevated LDL cholesterol and hypertension risk.'},
+  {id:'diabetes', label:'Blood Sugar Risk',   keys:['carbs','fiber'],           direction:'mixed', weights:[.6,.4], info:'High refined carbohydrate intake with insufficient dietary fiber disrupts blood glucose regulation and insulin sensitivity over time.'},
+  {id:'immunity', label:'Immune Function',    keys:['vitC','vitD','zinc'],      direction:'low', weights:[.4,.35,.25], info:'Vitamins C, D and Zinc are critical for immune cell production and anti-inflammatory response. Deficiency increases infection susceptibility.'},
+  {id:'protein',  label:'Protein Adequacy',   keys:['protein'],                 direction:'low', weights:[1], info:'Inadequate protein intake impairs muscle repair, enzyme synthesis, immune function, and hormonal balance — especially critical during growth and illness.'},
+];
+function computeRiskScore(factor, t){
+  let score = 0;
+  factor.keys.forEach((k,i)=>{
+    const pct = targets[k] ? (t[k]/targets[k]) : 1;
+    if(factor.direction==='low') score += (1 - Math.min(pct,1)) * factor.weights[i] * 100;
+    else if(factor.direction==='mixed'){
+      if(k==='fat') score += Math.max(0,pct-1.1)*factor.weights[i]*100;
+      else score += (1-Math.min(pct,1))*factor.weights[i]*100;
+    }
+  });
+  return Math.round(Math.min(score,100));
+}
+function renderRisk(){
+  const t = getTotals();
+  if(!logEntries.length){
+    document.getElementById('riskMeter').innerHTML='<div class="empty-state"><div class="ico">📊</div>Log food to generate risk scores</div>';
+    document.getElementById('riskExplanations').innerHTML='<div class="empty-state"><div class="ico">📋</div>Log food to see explanations</div>';
+    renderConditionInsights(null); return;
+  }
+  const scores = RISK_FACTORS.map(f=>({...f, score:computeRiskScore(f,t)}));
+  document.getElementById('riskMeter').innerHTML = scores.map(f=>{
+    const col = f.score<25?'#4ade80':f.score<55?'#f59e0b':'#f87171';
+    const lbl = f.score<25?'Low':f.score<55?'Moderate':'High';
+    return `<div class="risk-row">
+      <div class="risk-label">${f.label}</div>
+      <div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${f.score}%;background:${col}"></div></div>
+      <div class="risk-score" style="color:${col}">${f.score}</div>
+      <span class="chip" style="background:${col}22;color:${col};border:1px solid ${col}44;font-size:10px">${lbl}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('riskExplanations').innerHTML = scores.sort((a,b)=>b.score-a.score).map(f=>{
+    const col = f.score<25?'#4ade80':f.score<55?'#f59e0b':'#f87171';
+    return `<div class="rec-card">
+      <div class="rec-icon" style="font-size:22px">${f.score<25?'✅':f.score<55?'⚠️':'🔴'}</div>
+      <div><div class="rec-title" style="color:${col}">${f.label} — Score ${f.score}/100</div>
+      <div class="rec-body">${f.info}</div></div>
+    </div>`;
+  }).join('');
+  renderConditionInsights(t);
+}
+const CONDITION_INSIGHTS = {
+  diabetes:[
+    {icon:'🍚',text:'Limit refined carbohydrates (white rice, white bread). Choose brown rice, millets, or oats instead.'},
+    {icon:'🥬',text:'Increase dietary fiber — aim for 35–40g/day. Rajma, Chana, and Broccoli are excellent choices.'},
+    {icon:'⏱️',text:'Space meals every 3–4 hours to prevent blood sugar spikes. Avoid skipping meals.'},
+    {icon:'🚶',text:'Pair every meal with 10 minutes of light physical activity to improve glucose uptake.'},
+  ],
+  hypertension:[
+    {icon:'🥑',text:'Increase potassium intake (target 3500mg/day) — Spinach, Banana, Rajma, and Soya Chunks are rich sources.'},
+    {icon:'🧂',text:'Reduce sodium — avoid adding table salt, processed foods, and pickles. This tracker does not track sodium; be mindful of hidden salt.'},
+    {icon:'🐟',text:'Include omega-3 rich fish (Salmon, Mackerel, Tuna) 2–3 times per week to support vascular health.'},
+    {icon:'🥦',text:'Adopt DASH-style eating: more vegetables, fruits, whole grains, and lean protein.'},
+  ],
+  anaemia:[
+    {icon:'🩸',text:`Your iron target is elevated (${profile.gender==='female'?27:18}mg/day). Prioritise Sesame Seeds, Soya Chunks, and Spinach.`},
+    {icon:'🍋',text:'Always pair iron-rich foods with Vitamin C (lemon juice, guava, tomatoes) to increase absorption by 2–3×.'},
+    {icon:'☕',text:'Avoid tea and coffee within 1 hour of iron-rich meals — tannins inhibit iron absorption by up to 60%.'},
+    {icon:'💊',text:'Consult your doctor about iron supplementation if dietary sources alone are insufficient.'},
+  ],
+  osteoporosis:[
+    {icon:'🦴',text:'Calcium target elevated to 1200mg/day. Prioritise Sesame Seeds, Paneer, Cheese, and Milk.'},
+    {icon:'☀️',text:'Vitamin D is essential for calcium absorption. Get 15–20 minutes of morning sunlight daily and include Fish or fortified Milk.'},
+    {icon:'💪',text:'Include weight-bearing exercise (walking, yoga, strength training) — mechanical load directly stimulates bone formation.'},
+    {icon:'🧀',text:'Spread calcium intake across 3 meals — the body absorbs calcium more efficiently in smaller doses (≤500mg per meal).'},
+  ],
+  pregnancy:[
+    {icon:'🤰',text:'Folate target is 600µg/day. Prioritise Besan, Urad Dal, Spinach, and other leafy greens daily.'},
+    {icon:'🩸',text:'Iron target elevated to 27mg/day — critical for fetal blood development and prevention of maternal anaemia.'},
+    {icon:'🥛',text:'Calcium need is 1200mg/day — essential for fetal bone and teeth development. Dairy and Sesame Seeds are key.'},
+    {icon:'🐟',text:'Include Vitamin D and DHA-rich foods (Fish, fortified Milk). Avoid high-mercury fish (swordfish, king mackerel).'},
+  ],
+  none:[]
+};
+function renderConditionInsights(t){
+  const el = document.getElementById('conditionInsights');
+  const cond = profile.condition;
+  const insights = CONDITION_INSIGHTS[cond];
+  if(!insights||!insights.length){
+    el.innerHTML='<div class="empty-state"><div class="ico">🏥</div>Select a health condition in Profile to see targeted insights</div>'; return;
+  }
+  el.innerHTML = `<div style="margin-bottom:14px;font-size:12px;color:var(--text-muted)">Showing insights for: <span class="chip chip-purple">${cond.charAt(0).toUpperCase()+cond.slice(1)}</span></div>`
+    + insights.map(i=>`<div class="rec-card" style="margin-bottom:8px"><div class="rec-icon">${i.icon}</div><div class="rec-body" style="font-size:13px">${i.text}</div></div>`).join('');
+}
+
+/* ── RECOMMENDATIONS ── */
+function renderRecs(){
+  const t = getTotals();
+  const grid = document.getElementById('recsGrid');
+  const {diet} = profile;
+  const recs = [];
+  if(!logEntries.length){
+    grid.innerHTML='<div class="card"><div class="empty-state"><div class="ico">🤖</div>Save your profile and log food to get personalised recommendations</div></div>'; return;
+  }
+
+  // Food Additions
+  const additions=[];
+  const isNonveg = diet==='nonveg';
+  const isEgg = diet==='egg'||diet==='nonveg';
+  if(t.vitD<targets.vitD*0.5){
+    if(isNonveg) additions.push({food:'Fish (Tuna, Salmon, Mackerel)',icon:'🐟',reason:'Best dietary source of Vitamin D — 100g Tuna covers ~27% of daily needs'});
+    if(isEgg) additions.push({food:'Eggs (2/day)',icon:'🥚',reason:'Each egg provides 2µg Vitamin D — a reliable daily source'});
+    additions.push({food:'Mushrooms (sun-exposed)',icon:'🍄',reason:'Mushrooms exposed to UV light naturally produce Vitamin D2'});
+    additions.push({food:'Fortified Milk / Soy Milk',icon:'🥛',reason:'Fortified dairy provides both Vitamin D and calcium in one food'});
+  }
+  if(t.calcium<targets.calcium*0.6) additions.push({food:'Sesame Seeds (1 tbsp)',icon:'🌱',reason:'1 tbsp sesame seeds provides 145mg calcium — highest plant calcium source'});
+  if(t.iron<targets.iron*0.5){
+    additions.push({food:'Spinach with Lemon',icon:'🥬',reason:'Vitamin C in lemon doubles iron absorption from spinach'});
+    if(isNonveg) additions.push({food:'Mutton or Chicken',icon:'🍗',reason:'Heme iron from meat is 2–3× more bioavailable than plant iron'});
+  }
+  if(t.vitC<targets.vitC*0.4) additions.push({food:'Guava (1 medium)',icon:'🍈',reason:'One guava provides 228mg Vitamin C — 3.5× the daily target'});
+  if(t.vitB12<targets.vitB12*0.5){
+    if(diet==='veg'||diet==='vegan') additions.push({food:'Fortified Nutritional Yeast',icon:'🧫',reason:'One of the only reliable B12 sources for plant-based diets'});
+    if(isEgg) additions.push({food:'Eggs + Milk daily',icon:'🥚',reason:'Combined, these meet most B12 needs without meat'});
+    if(isNonveg) additions.push({food:'Tuna / Mutton',icon:'🐟',reason:'Both provide >100% daily B12 in a 100g serving'});
+  }
+  if(t.protein<targets.protein*0.7){
+    if(diet==='veg'||diet==='vegan') additions.push({food:'Soya Chunks',icon:'🫘',reason:'52g protein per 100g — highest protein density of any plant food in the database'});
+    if(diet==='vegan') additions.push({food:'Tofu + Quinoa',icon:'🥗',reason:'Complete protein pair — covers all essential amino acids'});
+    if(isNonveg) additions.push({food:'Grilled Chicken Breast',icon:'🍗',reason:'31g protein per 100g with minimal fat — best protein-to-calorie ratio'});
+  }
+  if(t.fiber<targets.fiber*0.5) additions.push({food:'Flaxseeds (1 tbsp)',icon:'🌿',reason:'27g fiber per 100g — also provides omega-3 fatty acids and lignans'});
+  if(t.zinc<targets.zinc*0.5) additions.push({food:'Sesame Seeds / Pumpkin Seeds',icon:'🌰',reason:'Both are excellent zinc sources — add to salads or curd'});
+  if(t.folate<targets.folate*0.5) additions.push({food:'Besan (Chickpea Flour)',icon:'🫘',reason:'557µg folate per 100g — highest folate density in the database'});
+  if(additions.length) recs.push({type:'additions',icon:'➕',items:additions.slice(0,5)});
+
+  // Swaps
+  const swaps=[];
+  const log = logEntries;
+  const has = name => log.find(e=>e.name===name);
+  if(has('Rice')&&t.fiber<targets.fiber*0.7) swaps.push({from:'White Rice',to:'Brown Rice or Millets',reason:'Higher fiber, lower GI, more magnesium — better for blood sugar control'});
+  if(has('Bread')&&t.fiber<targets.fiber*0.7) swaps.push({from:'White Bread',to:'Whole Wheat Roti (Atta)',reason:'3× more fiber, lower glycemic index, richer in B vitamins'});
+  if(has('Potato')&&t.carbs>targets.carbs*1.3) swaps.push({from:'Potato',to:'Sweet Potato',reason:'Lower GI, higher fiber, rich in Vitamin A and Vitamin C'});
+  if(has('Ghee')&&t.fat>targets.fat*1.2) swaps.push({from:'Ghee (excess)',to:'Olive Oil or Flaxseed Oil',reason:'Better omega-3 to omega-6 ratio and lower saturated fat content'});
+  if(has('Curd')&&t.protein<targets.protein*0.7) swaps.push({from:'Regular Curd',to:'Greek Yogurt',reason:'2.5× more protein per serving with the same calcium and probiotic benefit'});
+  if(has('Idli')&&t.fiber<targets.fiber*0.5) swaps.push({from:'Plain Idli',to:'Oats Idli (50% oats)',reason:'Significantly boosts fiber while keeping the familiar texture and taste'});
+  if(swaps.length) recs.push({type:'swaps',icon:'🔄',items:swaps.slice(0,4)});
+
+  // Portion Adjustments
+  const portions=[];
+  if(t.cal>targets.cal*1.2) portions.push({food:'Overall portions',adj:'Reduce by ~20%',reason:`You're ${Math.round(t.cal-targets.cal)} kcal over your ${targets.cal} kcal target — start by trimming carbs`});
+  if(t.cal<targets.cal*0.65) portions.push({food:'All meals',adj:'Increase',reason:`Only at ${Math.round((t.cal/targets.cal)*100)}% of energy needs — add a protein-rich snack or larger dinner`});
+  if(t.carbs>targets.carbs*1.4) portions.push({food:'Rice / Roti',adj:'Reduce by 25%',reason:`Carbs at ${Math.round(t.carbs)}g vs ${targets.carbs}g target — replace with extra Dal or vegetables`});
+  if(t.protein<targets.protein*0.6) portions.push({food:'Protein foods (Dal, Paneer, Egg)',adj:'Double serving',reason:`Only ${Math.round(t.protein)}g protein vs ${targets.protein}g target — prioritise at every meal`});
+  if(t.fat>targets.fat*1.5) portions.push({food:'Oils, Ghee, Fried items',adj:'Halve',reason:`Fat at ${Math.round(t.fat)}g vs ${targets.fat}g target — switch to grilling or steaming`});
+  if(portions.length) recs.push({type:'portions',icon:'⚖️',items:portions.slice(0,4)});
+
+  // Meal Timing
+  const timing=[];
+  timing.push({icon:'🌅',tip:'Eat breakfast within 1 hour of waking — morning meals regulate cortisol and stabilise blood sugar through the day.'});
+  timing.push({icon:'🥗',tip:'Make lunch your largest meal (40% of daily calories) when metabolism peaks. Front-loading calories aids weight management.'});
+  timing.push({icon:'🕐',tip:'Keep dinner light and at least 2–3 hours before bedtime. Heavy late-night meals disrupt sleep and fat metabolism.'});
+  if(t.iron<targets.iron*0.7) timing.push({icon:'☕',tip:'Avoid tea/coffee within 1 hour of iron-rich meals — tannins reduce iron absorption by up to 60%.'});
+  if(t.calcium<targets.calcium*0.7) timing.push({icon:'🌙',tip:'Take calcium-rich foods in the evening — the body absorbs calcium more efficiently during sleep-phase hormonal cycles.'});
+  recs.push({type:'timing',icon:'⏱️',items:timing});
+
+  // Wins
+  const wins = KEYS.filter(k=>k!=='cal').filter(k=>{ const p=(targets[k]?(t[k]/targets[k])*100:0); return p>=80&&p<=120; }).map(k=>LABELS[k]);
+  if(wins.length>=2) recs.push({type:'wins',icon:'🏆',wins});
+
+  grid.innerHTML = recs.map(rec=>{
+    if(rec.type==='additions') return `<div class="card"><div class="card-header"><div class="card-icon green">➕</div><div><div class="card-title">Foods to Add</div><div class="card-sub">Based on your current nutrient gaps · filtered for ${dietLabel(diet)}</div></div></div><div style="display:flex;flex-direction:column;gap:10px">${rec.items.map(i=>`<div class="rec-card"><div class="rec-icon">${i.icon}</div><div><div class="rec-title">${i.food}</div><div class="rec-body">${i.reason}</div></div></div>`).join('')}</div></div>`;
+    if(rec.type==='swaps') return `<div class="card"><div class="card-header"><div class="card-icon blue">🔄</div><div><div class="card-title">Smart Swaps</div><div class="card-sub">Drop-in upgrades based on what's in your log</div></div></div><div style="display:flex;flex-direction:column;gap:10px">${rec.items.map(i=>`<div class="rec-card"><div class="rec-icon">🔄</div><div><div class="rec-title"><span style="color:var(--danger)">${i.from}</span> → <span style="color:var(--accent)">${i.to}</span></div><div class="rec-body">${i.reason}</div></div></div>`).join('')}</div></div>`;
+    if(rec.type==='portions') return `<div class="card"><div class="card-header"><div class="card-icon amber">⚖️</div><div><div class="card-title">Portion Adjustments</div><div class="card-sub">Calibrate what's already on your plate</div></div></div><div style="display:flex;flex-direction:column;gap:10px">${rec.items.map(i=>`<div class="rec-card"><div class="rec-icon">📏</div><div><div class="rec-title">${i.food} — <span style="color:var(--warn)">${i.adj}</span></div><div class="rec-body">${i.reason}</div></div></div>`).join('')}</div></div>`;
+    if(rec.type==='timing') return `<div class="card"><div class="card-header"><div class="card-icon purple">⏱️</div><div><div class="card-title">Meal Timing Tips</div><div class="card-sub">When you eat matters as much as what you eat</div></div></div><div style="display:flex;flex-direction:column;gap:10px">${rec.items.map(i=>`<div class="rec-card"><div class="rec-icon">${i.icon}</div><div class="rec-body" style="font-size:13px">${i.tip}</div></div>`).join('')}</div></div>`;
+    if(rec.type==='wins') return `<div class="card"><div class="card-header"><div class="card-icon green">🏆</div><div><div class="card-title">Great Choices Today</div><div class="card-sub">Nutrients in the ideal 80–120% range</div></div></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">${rec.wins.map(w=>`<span class="chip chip-green">✓ ${w}</span>`).join('')}</div><div style="margin-top:12px;font-size:12px;color:var(--text-secondary)">Keep up your current eating patterns for these nutrients.</div></div>`;
+    return '';
+  }).join('');
+}
+function dietLabel(d){ return {veg:'Vegetarian',nonveg:'Non-Vegetarian',egg:'Eggetarian',vegan:'Vegan'}[d]||d; }
+
+/* ── FOOD DB TABLE ── */
+function renderFoodDbTable(){
+  const el = document.getElementById('foodDbTable');
+  const names = Object.keys(FOODS).sort();
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Food</th><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Fiber</th><th>Iron</th><th>Ca</th><th>Vit C</th><th>Vit D</th><th>B12</th><th>Zinc</th><th>Folate</th></tr></thead>
+    <tbody>${names.map(n=>{const f=FOODS[n]; return `<tr>
+      <td><strong>${n}</strong></td>
+      <td style="font-family:var(--font-mono);color:var(--accent)">${f.cal}</td>
+      <td style="font-family:var(--font-mono)">${f.protein}g</td>
+      <td style="font-family:var(--font-mono)">${f.carbs}g</td>
+      <td style="font-family:var(--font-mono)">${f.fat}g</td>
+      <td style="font-family:var(--font-mono)">${f.fiber}g</td>
+      <td style="font-family:var(--font-mono)">${f.iron}mg</td>
+      <td style="font-family:var(--font-mono)">${f.calcium}mg</td>
+      <td style="font-family:var(--font-mono)">${f.vitC}mg</td>
+      <td style="font-family:var(--font-mono)">${f.vitD}µg</td>
+      <td style="font-family:var(--font-mono)">${f.vitB12}µg</td>
+      <td style="font-family:var(--font-mono)">${f.zinc}mg</td>
+      <td style="font-family:var(--font-mono)">${f.folate}µg</td>
+    </tr>`; }).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ── TOAST ── */
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
